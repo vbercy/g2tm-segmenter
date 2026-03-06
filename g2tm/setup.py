@@ -38,18 +38,18 @@ def readme():
 setup(
     name="g2tm",
     version=get_version(),
-    author="V. Bercy",
+    author="Victor BERCY",
     description="G2TM: Single Module Graph-Guided Token Merging for Efficient"
                 "for Semantic Segmentation",
     install_requires=[
+        "numpy<2",
         "torch<2",
         "torchvision",
-        "numpy<2",
         "opencv-python",
         "pillow",
-        "tqdm",
         "scipy",
-        "networkx"
+        "networkx",
+        "nx-cugraph-cu11",
     ],
     long_description=readme(),
     long_description_content_type="text/markdown",

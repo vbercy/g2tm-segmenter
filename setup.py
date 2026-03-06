@@ -69,7 +69,7 @@ def read_requirements_file():
 setup(
     name="segm",
     version=get_version(),
-    description="Segmenter: Transformer for Semantic Segmentation",
+    description="Segmenter: Transformer for Semantic Segmentation adapted for G2TM.",
     long_description=readme(),
     long_description_content_type= "text/markdown",
     packages=["segm"],

@@ -1,7 +1,17 @@
 [build-system]
 requires = [
-    "click",
     "setuptools<80.9.0",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "segm"
+version = "0.0.1b"
+description = "Segmenter: Transformer for Semantic Segmentation adapted for G2TM."
+readme = { file = "./segm/README.md", content-type = "text/markdown" }
+dependencies = [
+    "click",
     "numpy<2",
     "einops",
     "python-hostlist",
@@ -11,9 +21,17 @@ requires = [
     "torch<2",
     "onnx",
     "onnxscript",
-    "timm==0.4.12",
-    "mmcv==1.3.8",
-    "mmsegmentation==0.14.1",
+    "onnxruntime",
+    "timm==0.9",
+    "mmcv<2",
+    "mmsegmentation<1",
     "fvcore",
+    "cityscapesscripts",
+    "tensorboard",
 ]
-build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+dev = [
+    "pylint",
+    "flake8",
+]

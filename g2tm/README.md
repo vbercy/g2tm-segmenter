@@ -1,6 +1,6 @@
 # G2TM: Single-Module Graph-Guided Token Merging for Efficient Semantic Segmentation (VISAPP 2026)
 
-![G2TM Token Visualizations](./figs/visualisations.png)
+![G2TM Token Visualizations](../figs/visualisations.png)
 
 <p align="center">
   <br> Authors: Victor BERCY, Martyna POREBA, Michal SZCZEPANSKI, Samia BOUCHAFA </br>
@@ -27,14 +27,14 @@
   <img src="https://img.shields.io/badge/license-Apache2.0-green.svg" alt="License">
 
   <!-- Article -->
-  <a href="<LIEN_VERS_L_ARTICLE>">
+  <a href="https://github.com/vbercy/g2tm-segmenter/blob/main/paper/G2TM_Single-Module_Graph-Guided_Token_Merging_for_Efficient_Semantic_Segmentation.pdf">
     <img src="https://img.shields.io/badge/article-link.svg" alt="Article">
   </a>
 </p>
 
 Graph-Guided Token Merging (G2TM) is a lightweight one-shot module designed to eliminate redundant tokens early in the ViT architecture. It performs a single merging step after a shallow attention block, enabling all subsequent layers to operate on a compact token set. It leverages graph theory to identify groups of semantically redundant patches.
 
-![G2TM Overview](./figs/g2tm.png)
+![G2TM Overview](../figs/g2tm.png)
 
 ## G2TM applied to Segmenter
 
@@ -226,7 +226,7 @@ We explain here the specific options for G2TM:
 
 ## Results and Models
 
-See [RESULTS](./RESULTS.md) for some comparative results for Segmenter + G2TM and the corresponding model checkpoints.
+See [RESULTS](../RESULTS.md) for some comparative results for Segmenter + G2TM and the corresponding model checkpoints.
 
 ## Upcoming Features 
 
@@ -245,7 +245,7 @@ This code extends the official [Segmenter](https://github.com/rstrudel/segmenter
 
 Inheriting from the Segmenter repository, the Vision Transformer code is based on [timm](https://github.com/rwightman/pytorch-image-models) library (under [Apache 2.0 Licence](https://github.com/huggingface/pytorch-image-models/blob/main/LICENSE)) and the semantic segmentation training and evaluation pipelines are using the [mmsegmentation](https://github.com/open-mmlab/mmsegmentation) and [mmcv](https://github.com/open-mmlab/mmcv) libraries (under [Apache 2.0 Licence](https://github.com/open-mmlab/mmsegmentation/blob/main/LICENSE)).
 
-All files covered by Segmenter's or ToMe's licences include a header indicating the licence and whether the file has been modified. You can find such files from Segmenter's repository in the [`segm`](./segm/) directory and from ToMe's repository in the [`patch`](./g2tm/g2tm/patch/) and [`vis`](./g2tm/g2tm/vis/) folders.
+All files covered by Segmenter's or ToMe's licences include a header indicating the licence and whether the file has been modified. You can find such files from Segmenter's repository in the [`segm`](../segm/) directory and from ToMe's repository in the [`patch`](./g2tm/patch/) and [`vis`](./g2tm/vis/) folders.
 
 Below are other Python librairies, along with their corresponding licenses, used in this work:
 - [Click](https://github.com/pallets/click) under [BSD-3-Clause License](https://github.com/pallets/click/blob/main/LICENSE.txt)
@@ -264,7 +264,7 @@ Below are other Python librairies, along with their corresponding licenses, used
 
 ## License and Contributing
 
-By contributing to G2TM, you agree that your contributions will be licensed under the [LICENSE file](./LICENSE) in the root directory of this source tree.
+By contributing to G2TM, you agree that your contributions will be licensed under the [LICENSE file](../LICENSE) in the root directory of this source tree.
 
 ```
    Copyright © 2025 Commissariat à l'Energie Atomique et aux Energies Alternatives (CEA) 

@@ -1,0 +1,17 @@
+click
+numpy<2
+einops
+python-hostlist
+tqdm
+requests
+pyyaml
+torch<2
+onnx
+onnxscript
+onnxruntime
+timm==0.9
+mmcv<2
+mmsegmentation<1
+fvcore
+cityscapesscripts
+tensorboard

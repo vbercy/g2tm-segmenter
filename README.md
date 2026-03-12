@@ -25,10 +25,12 @@
 
   <!-- Licence -->
   <img src="https://img.shields.io/badge/license-Apache2.0-green.svg" alt="License">
+</p>
 
+<p align="center">
   <!-- Article -->
-  <a href="<LIEN_VERS_L_ARTICLE>">
-    <img src="https://img.shields.io/badge/article-link.svg" alt="Article">
+  <a href="https://github.com/vbercy/g2tm-segmenter/blob/main/paper/G2TM_Single-Module_Graph-Guided_Token_Merging_for_Efficient_Semantic_Segmentation.pdf">
+    <img src="https://img.shields.io/badge/Paper-%F0%9F%93%83-gray" alt="Article">
   </a>
 </p>
 

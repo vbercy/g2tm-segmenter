@@ -3,7 +3,7 @@
 ![G2TM Token Visualizations](./figs/visualisations.png)
 
 <p align="center">
-  <br> Authors: Victor BERCY, Martyna POREBA, Michal SZCZEPANSKI, Samia BOUCHAFA </br>
+  <br> Authors: <a href="https://orcid.org/0009-0006-0682-8927">Victor BERCY</a>, <a href="https://orcid.org/0000-0002-5102-7735">Martyna POREBA</a>, <a href="https://orcid.org/0009-0000-9061-4396">Michal SZCZEPANSKI</a>, <a href="https://orcid.org/0000-0002-2860-8128">Samia BOUCHAFA</a></br>
 </p>
 
 <p align="center">
@@ -12,6 +12,9 @@
 
   <!-- Version du projet -->
   <img src="https://img.shields.io/badge/version-0.1-yellow.svg" alt="Version">
+  
+  <!-- Licence -->
+  <img src="https://img.shields.io/badge/license-Apache2.0-green.svg" alt="License">
 
   <!-- Vérification du linting -->
   <a href="https://github.com/vbercy/g2tm-segmenter/actions/workflows/pylint.yml">
@@ -22,14 +25,11 @@
   <a href="https://github.com/vbercy/g2tm-segmenter/actions/workflows/python-package-conda.yml">
     <img src="https://github.com/vbercy/g2tm-segmenter/actions/workflows/python-package-conda.yml/badge.svg?branch=main" alt="Conda installation"/>
   </a>
-
-  <!-- Licence -->
-  <img src="https://img.shields.io/badge/license-Apache2.0-green.svg" alt="License">
 </p>
 
 <p align="center">
   <!-- Article -->
-  <a href="https://github.com/vbercy/g2tm-segmenter/blob/main/paper/G2TM_Single-Module_Graph-Guided_Token_Merging_for_Efficient_Semantic_Segmentation.pdf">
+  <a href="https://www.scitepress.org/Link.aspx?doi=10.5220/0014267600004084">
     <img src="https://img.shields.io/badge/Paper-%F0%9F%93%83-gray" alt="Article">
   </a>
 </p>
@@ -236,8 +236,8 @@ See [RESULTS](./RESULTS.md) for some comparative results for Segmenter + G2TM an
 - [x] Training and Inference scripts
 - [x] Flops and Speedtest scripts
 - [x] Token and attention map visualization scripts
-- [x] Segmenter checkpoints for ADE20K and Cityscapes datasets
-- [ ] Segmenter checkpoints for Pascal-Context dataset
+- [x] Experiments on ADE20K and Cityscapes datasets
+- [ ] Experiments on Pascal-Context dataset
 - [ ] ONNX export script
 ```
 
@@ -289,5 +289,16 @@ By contributing to G2TM, you agree that your contributions will be licensed unde
 If you cite G2TM or use this repository in your work, please cite:
 
 ```
-Bercy, V.; Poreba, M.; Szczepanski, M. and Bouchafa, S. (2026). G2TM: Single-Module Graph-Guided Token Merging for Efficient Semantic Segmentation.  In Proceedings of the 21st International Conference on Computer Vision Theory and Applications - Volume 2, ISBN 978-989-758-804-4, ISSN 2184-4321, pages 43-54.
+@conference{bercy2026g2tm,
+author={Victor Bercy and Martyna Poreba and Michal Szczepanski and Samia Bouchafa},
+title={G2TM: Single-Module Graph-Guided Token Merging for Efficient Semantic Segmentation},
+booktitle={Proceedings of the 21st International Conference on Computer Vision Theory and Applications - Volume 2: VISAPP},
+year={2026},
+pages={43-54},
+publisher={SciTePress},
+organization={INSTICC},
+doi={10.5220/0014267600004084},
+isbn={978-989-758-804-4},
+issn={2184-4321},
+}
 ```

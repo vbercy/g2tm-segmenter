@@ -28,7 +28,7 @@ The following commands enable single-GPU training with different ViT backbone si
 Segmenter + G2TM at layer 2 with threshold 0.88, and ViT-T backbone:
 
 ```bash
-python ./segm/train.py --log-dir ./runs/g2tm_segmT_L2_T0.88 \
+python ./segm/train.py --log-dir <tiny_model_dir> \
                        --dataset ade20k \
                        --backbone vit_tiny_patch16_384 \
                        --decoder mask_transformer \
@@ -41,7 +41,7 @@ python ./segm/train.py --log-dir ./runs/g2tm_segmT_L2_T0.88 \
 Segmenter + G2TM at layer 2 with threshold 0.88, and ViT-S backbone:
 
 ```bash
-python ./segm/train.py --log-dir ./runs/g2tm_segmS_L2_T0.88 \
+python ./segm/train.py --log-dir <small_model_dir> \
                        --dataset ade20k \
                        --backbone vit_small_patch16_384 \
                        --decoder mask_transformer \
@@ -54,7 +54,7 @@ python ./segm/train.py --log-dir ./runs/g2tm_segmS_L2_T0.88 \
 Segmenter + G2TM at layer 2 with threshold 0.88, and ViT-B backbone:
 
 ```bash
-python ./segm/train.py --log-dir ./runs/g2tm_segmB_L2_T0.88 \
+python ./segm/train.py --log-dir <base_model_dir> \
                        --dataset ade20k \
                        --backbone vit_base_patch16_384 \
                        --decoder mask_transformer \
@@ -67,7 +67,7 @@ python ./segm/train.py --log-dir ./runs/g2tm_segmB_L2_T0.88 \
 Segmenter + G2TM at layer 2 with threshold 0.88, and ViT-L backbone:
 
 ```bash
-python ./segm/train.py --log-dir ./runs/g2tm_segmL_L2_T0.88 \
+python ./segm/train.py --log-dir <large_model_dir> \
                        --dataset ade20k \
                        --backbone vit_large_patch16_384 \
                        --decoder mask_transformer \
@@ -88,7 +88,7 @@ export CUDA_VISIBLE_DEVICES=0,1
 python -m torch.distributed.run \
        --nnodes=1 --nproc_per_node=2 --rdzv_endpoint=127.0.0.1:24900 \
        ./segm/train.py \
-       --log-dir ./runs/g2tm_segL_L2_T0.94 \
+       --log-dir <cityscapes_model_dir> \
        --dataset cityscapes \
        --backbone vit_large_patch16_384 \
        --decoder mask_transformer \
@@ -107,7 +107,7 @@ The following command allows you to change the input image resolution, which dir
 Segmenter + G2TM at layer 2 with threshold 0.94, and ViT-S backbone:
 
 ```bash
-python ./segm/train.py --log-dir ./runs/g2tm_segmS_L2_T0.94 \
+python ./segm/train.py --log-dir <citylarge_model_dir> \
                        --dataset cityscapes_large \
                        --backbone vit_small_patch16_384 \
                        --decoder mask_transformer \
@@ -124,7 +124,7 @@ The following commands enable Proportional Attention and Inverse Proportional At
 Segmenter + G2TM at layer 2 with threshold 0.88, with Proportional Attention and ViT-S backbone:
 
 ```bash
-python ./segm/train.py --log-dir ./runs/g2tm_segmS_L2_T0.88 \
+python ./segm/train.py --log-dir <pa_model_dir> \
                        --dataset ade20k \
                        --backbone vit_small_patch16_384 \
                        --decoder mask_transformer \
@@ -138,7 +138,7 @@ python ./segm/train.py --log-dir ./runs/g2tm_segmS_L2_T0.88 \
 Segmenter + G2TM at layer 2 with threshold 0.88, with Inverse Proportional Attention and ViT-S backbone:
 
 ```bash
-python ./segm/train.py --log-dir ./runs/g2tm_segmS_L2_T0.88 \
+python ./segm/train.py --log-dir <ipa_model_dir> \
                        --dataset ade20k \
                        --backbone vit_small_patch16_384 \
                        --decoder mask_transformer \
@@ -162,7 +162,7 @@ The following command enables the threshold to vary during the training, by acti
 Segmenter + G2TM at layer 2 with threshold 0.88, with curriculum and ViT-S backbone:
 
 ```bash
-python ./segm/train.py --log-dir ./runs/g2tm_segmS_L2_T0.88 \
+python ./segm/train.py --log-dir <curric_model_dir> \
                        --dataset ade20k \
                        --backbone vit_small_patch16_384 \
                        --decoder mask_transformer \

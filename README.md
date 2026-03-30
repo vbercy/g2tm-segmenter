@@ -57,7 +57,7 @@ cd g2tm-segmenter
 
 **2. Setting up a conda environment:**
 
-G2TM needs [PyTorch](https://pytorch.org/) ≥ 1.13.1 for the `scatter_reduce` method to work properly.
+G2TM needs [PyTorch](https://pytorch.org/) 1.13.1 for the `scatter_reduce` method to work properly.
 
 ``` bash
 # create environment
@@ -230,6 +230,8 @@ We explain here the specific options for G2TM:
 
 See [RESULTS](./RESULTS.md) for some comparative results for Segmenter + G2TM and the corresponding model checkpoints.
 
+**NOTE:** We are still looking for a solution to host all model checkpoints, in the meantime do not hesitate to request the checkpoints by contacting one of the authors.
+
 ## Upcoming Features 
 
 ```
@@ -290,15 +292,15 @@ If you cite G2TM or use this repository in your work, please cite:
 
 ```
 @conference{bercy2026g2tm,
-author={Victor Bercy and Martyna Poreba and Michal Szczepanski and Samia Bouchafa},
-title={G2TM: Single-Module Graph-Guided Token Merging for Efficient Semantic Segmentation},
-booktitle={Proceedings of the 21st International Conference on Computer Vision Theory and Applications - Volume 2: VISAPP},
-year={2026},
-pages={43-54},
-publisher={SciTePress},
-organization={INSTICC},
-doi={10.5220/0014267600004084},
-isbn={978-989-758-804-4},
-issn={2184-4321},
+       author={Victor Bercy and Martyna Poreba and Michal Szczepanski and Samia Bouchafa},
+       title={G2TM: Single-Module Graph-Guided Token Merging for Efficient Semantic Segmentation},
+       booktitle={Proceedings of the 21st International Conference on Computer Vision Theory and Applications - Volume 2: VISAPP},
+       year={2026},
+       pages={43-54},
+       publisher={SciTePress},
+       organization={INSTICC},
+       doi={10.5220/0014267600004084},
+       isbn={978-989-758-804-4},
+       issn={2184-4321},
 }
 ```

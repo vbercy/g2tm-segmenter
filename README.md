@@ -3,7 +3,7 @@
 ![G2TM Token Visualizations](./figs/visualisations.png)
 
 <p align="center">
-  <br> Authors: <a href="https://orcid.org/0009-0006-0682-8927">Victor BERCY</a>, <a href="https://orcid.org/0000-0002-5102-7735">Martyna POREBA</a>, <a href="https://orcid.org/0009-0000-9061-4396">Michal SZCZEPANSKI</a>, <a href="https://orcid.org/0000-0002-2860-8128">Samia BOUCHAFA</a></br>
+  <br> Authors: <a href="https://orcid.org/0009-0006-0682-8927">Victor BERCY</a>, <a href="https://orcid.org/0000-0002-5102-7735">Martyna POREBA</a>, <a href="https://orcid.org/0009-0000-9061-4396">Michal SZCZEPANSKI</a>, <a href="https://orcid.org/0000-0002-2860-8128">Samia BOUCHAFA</a>
 </p>
 
 <p align="center">
@@ -31,6 +31,10 @@
   <!-- Article -->
   <a href="https://www.scitepress.org/Link.aspx?doi=10.5220/0014267600004084">
     <img src="https://img.shields.io/badge/Paper-%F0%9F%93%83-gray" alt="Article">
+  </a>
+  <!-- Repository -->
+  <a href="https://github.com/vbercy/g2tm-segmenter">
+    <img src="https://img.shields.io/badge/Repo-%23121011.svg?style=flat&logo=github" alt="Repository">
   </a>
 </p>
 

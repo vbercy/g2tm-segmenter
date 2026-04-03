@@ -90,7 +90,7 @@ import g2tm
 @click.option("--selected-layer", default=1, type=int)
 @click.option("--threshold", default=0.88, type=float)
 @click.option("--start-thresh", default=0.95, type=float)
-@click.option("--curric-start", default=64, type=int)
+@click.option("--curric-warmup", default=64, type=int)
 @click.option("--curric-period", default=10, type=int)
 @click.option("--curric-thresh/--no-curric-thresh",
               default=False, is_flag=True)
@@ -101,7 +101,7 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
          backbone, decoder, optimizer, scheduler, weight_decay, dropout,
          drop_path, batch_size, epochs, learning_rate, minlearning_rate,
          warmup_epochs, start_factor, normalization, eval_freq, amp, resume,
-         patch_type, selected_layer, threshold, start_thresh, curric_start,
+         patch_type, selected_layer, threshold, start_thresh, curric_warmup,
          curric_period, curric_thresh, prop_attn, iprop_attn, n_cycles):
     """Model training with or without token reduction.
 
@@ -134,7 +134,7 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
         selected_layer (int): Layer to apply token reduction (1-based).
         threshold (float): Threshold parameter for G2TM.
         start_thresh (float): Starting value of the threshold if curriculum.
-        curric_start (int): Epoch to start curriculum.
+        curric_warmup (int): Number of epoch for which curriculum is disabled.
         curric_period (int): Number of epochs of each curriculum step.
         curric_thresh (bool): Whether to activate threshold curriculum.
         prop_attn (bool): Whether to apply Proportional Attention.
@@ -222,7 +222,7 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
             patch_type=patch_type,
             threshold=threshold,
             start_threshold=start_thresh,
-            curriculum_start=curric_start,
+            curriculum_start=curric_warmup,
             curriculum_period=curric_period,
             selected_layer=selected_layer,
         ),
@@ -365,8 +365,8 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
         writer.add_scalar("epoch", epoch, epoch, new_style=True)
 
         if curric_thresh:
-            if (epoch > curric_start - 1 and
-                    (epoch - curric_start) % curric_period == 0 and
+            if (epoch > curric_warmup - 1 and
+                    (epoch - curric_warmup) % curric_period == 0 and
                     model_without_ddp.encoder.threshold > threshold):
                 model_without_ddp.encoder.threshold = (
                     round(model_without_ddp.encoder.threshold-0.01, 2)

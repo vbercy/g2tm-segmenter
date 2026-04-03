@@ -172,7 +172,7 @@ python ./segm/train.py --log-dir <curric_model_dir> \
                        --batch-size 8 \
                        --curric-thresh \
                        --start-thresh 0.95 \
-                       --curric-start 64 \
+                       --curric-warmup 64 \
                        --curric-period 10
 ```
 

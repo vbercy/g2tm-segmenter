@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/python-3.10-blue.svg" alt="Python versions">
 
   <!-- Version du projet -->
-  <img src="https://img.shields.io/badge/version-0.1-yellow.svg" alt="Version">
+  <img src="https://img.shields.io/badge/torch-1.13.1-red.svg" alt="Version">
   
   <!-- Licence -->
   <img src="https://img.shields.io/badge/license-Apache2.0-green.svg" alt="License">
@@ -30,11 +30,15 @@
 <p align="center">
   <!-- Article -->
   <a href="https://www.scitepress.org/Link.aspx?doi=10.5220/0014267600004084">
-    <img src="https://img.shields.io/badge/Paper-%F0%9F%93%83-gray" alt="Article">
+    <img src="https://img.shields.io/badge/%F0%9F%93%83-Editor-yellow" alt="Article">
+  </a>
+  <!-- Article -->
+  <a href="https://cea.hal.science/cea-05578363">
+    <img src="https://img.shields.io/badge/%F0%9F%93%83-Open--source-brightgreen" alt="Article">
   </a>
   <!-- Repository -->
   <a href="https://github.com/vbercy/g2tm-segmenter">
-    <img src="https://img.shields.io/badge/Repo-%23121011.svg?style=flat&logo=github" alt="Repository">
+    <img src="https://img.shields.io/badge/GitHub-gray.svg?style=flat&logo=github" alt="Repository">
   </a>
 </p>
 

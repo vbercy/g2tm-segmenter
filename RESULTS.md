@@ -1,6 +1,8 @@
 # Results and Models
 
-Below, we provide the results for different network settings and datasets. 
+Below, we provide the results for different network settings and datasets.
+
+**NOTE:** The results for the models' throughput and number of operations are averaged across the validation set using a batch size of 1.
 
 ## ADE20K
 
@@ -11,7 +13,7 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <th>Backbone</th>
         <th>Crop size</th>
         <th>mIoU</th>
-        <th>Im/sec (BS=32)</th>
+        <th>Im/sec</th>
         <th>GFLOPs</th>
         <th colspan="3">Download</th>
     </tr>
@@ -22,8 +24,8 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <td>147.4</td>
         <td>12.8</td>
         <td><a href="#ade20k">model</a></td>
-        <td><a href="#ade20">config</a></td>
-        <td><a href="#ade20">log</a></td>
+        <td><a href="#ade20k">config</a></td>
+        <td><a href="#ade20k">log</a></td>
     </tr>
     <tr>
         <td>ViT-Ti/16 + G2TM </td>
@@ -31,9 +33,9 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <td>39.9</td>
         <td>136.5</td>
         <td>7.8</td>
-        <td><a href="#ade20">model</a></td>
-        <td><a href="#ade20">config</a></td>
-        <td><a href="#ade20">log</a></td>
+        <td><a href="#ade20k">model</a></td>
+        <td><a href="#ade20k">config</a></td>
+        <td><a href="#ade20k">log</a></td>
     </tr>
     <tr>
         <td>ViT-S/16</td>
@@ -41,9 +43,9 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <td>46.5</td>
         <td>94.9</td>
         <td>38.6</td>
-        <td><a href="#ade20">model</a></td>
-        <td><a href="#ade20">config</a></td>
-        <td><a href="#ade20">log</a></td>
+        <td><a href="#ade20k">model</a></td>
+        <td><a href="#ade20k">config</a></td>
+        <td><a href="#ade20k">log</a></td>
     </tr>
     <tr>
         <td>ViT-S/16 + G2TM</td>
@@ -51,9 +53,9 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <td>46.6</td>
         <td>105.5</td>
         <td>26.1</td>
-        <td><a href="#ade20">model</a></td>
-        <td><a href="#ade20">config</a></td>
-        <td><a href="#ade20">log</a></td>
+        <td><a href="#ade20k">model</a></td>
+        <td><a href="#ade20k">config</a></td>
+        <td><a href="#ade20k">log</a></td>
     </tr>
     <tr>
         <td>ViT-B/16</td>
@@ -61,9 +63,9 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <td>49.6</td>
         <td>43.2</td>
         <td>129.6</td>
-        <td><a href="#ade20">model</a></td>
-        <td><a href="#ade20">config</a></td>
-        <td><a href="#ade20">log</a></td>
+        <td><a href="#ade20k">model</a></td>
+        <td><a href="#ade20k">config</a></td>
+        <td><a href="#ade20k">log</a></td>
     </tr>
     <tr>
         <td>ViT-B/16 + G2TM </td>
@@ -71,9 +73,9 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <td>48.1</td>
         <td>57.9</td>
         <td>82.5</td>
-        <td><a href="#ade20">model</a></td>
-        <td><a href="#ade20">config</a></td>
-        <td><a href="#ade20">log</a></td>
+        <td><a href="#ade20k">model</a></td>
+        <td><a href="#ade20k">config</a></td>
+        <td><a href="#ade20k">log</a></td>
     </tr>
     <tr>
         <td>ViT-L/16</td>
@@ -81,9 +83,9 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <td>52.3</td>
         <td>15</td>
         <td>400.1</td>
-        <td><a href="#ade20">model</a></td>
-        <td><a href="#ade20">config</a></td>
-        <td><a href="#ade20">log</a></td>
+        <td><a href="#ade20k">model</a></td>
+        <td><a href="#ade20k">config</a></td>
+        <td><a href="#ade20k">log</a></td>
     </tr>
     <tr>
         <td>ViT-L/16 + G2TM </td>
@@ -91,9 +93,9 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <td>50</td>
         <td>26</td>
         <td>211</td>
-        <td><a href="#ade20">model</a></td>
-        <td><a href="#ade20">config</a></td>
-        <td><a href="#ade20">log</a></td>
+        <td><a href="#ade20k">model</a></td>
+        <td><a href="#ade20k">config</a></td>
+        <td><a href="#ade20k">log</a></td>
     </tr>
 </table>
 
@@ -107,7 +109,7 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <th>Backbone</th>
         <th>Crop size</th>
         <th>mIoU</th>
-        <th>Im/sec (BS=32)</th>
+        <th>Im/sec</th>
         <th>GFLOPs</th>
         <th colspan="3">Download</th>
     </tr>
@@ -199,13 +201,13 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
         <th>Backbone</th>
         <th>Crop size</th>
         <th>mIoU</th>
-        <th>Im/sec (BS=32)</th>
+        <th>Im/sec</th>
         <th>GFLOPs</th>
         <th colspan="3">Download</th>
     </tr>
     <tr>
         <td>ViT-T/16</td>
-        <td>768x768</td>
+        <td>1024x1024</td>
         <td>73.1</td>
         <td>32.8</td>
         <td>117</td>
@@ -215,7 +217,7 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
     </tr>
     <tr>
         <td>ViT-T/16 + G2TM</td>
-        <td>768x768</td>
+        <td>1024x1024</td>
         <td>71.9</td>
         <td>38</td>
         <td>70.9</td>
@@ -225,7 +227,7 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
     </tr>
     <tr>
         <td>ViT-S/16</td>
-        <td>768x768</td>
+        <td>1024x1024</td>
         <td>76.6</td>
         <td>15.7</td>
         <td>285</td>
@@ -235,7 +237,7 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
     </tr>
     <tr>
         <td>ViT-S/16 + G2TM </td>
-        <td>768x768</td>
+        <td>1024x1024</td>
         <td>75.6</td>
         <td>20.9</td>
         <td>174</td>
@@ -245,7 +247,7 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
     </tr>
     <tr>
         <td>ViT-B/16</td>
-        <td>768x768</td>
+        <td>1024x1024</td>
         <td>77.1</td>
         <td>6.79</td>
         <td>776</td>
@@ -255,7 +257,7 @@ We provide the evaluation results and the checkpoints of Segmenter models, that 
     </tr>
     <tr>
         <td>ViT-B/16 + G2TM</td>
-        <td>768x768</td>
+        <td>1024x1024</td>
         <td>75.2</td>
         <td>11.2</td>
         <td>439</td>

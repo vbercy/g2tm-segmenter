@@ -2,8 +2,21 @@
 
 ![G2TM Token Visualizations](../figs/visualisations.png)
 
+<div align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; color: white; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+  <h2 style="margin: 0; font-weight: 600;"><strong>🚀 Update available</strong></h2>
+  <p style="margin: 8px 0 0">
+    <strong>G2TM can now be run with PyTorch 2.4.1 and PyTorch Geometric!</strong>
+  </p>
+  <p style="margin: 8px 0 0">
+    The code can be found in the <a href="https://github.com/vbercy/g2tm-segmenter/tree/torch2" style="color: #FFD700; text-decoration: underline;">`torch2` branch</a>
+  </p>
+  <p style="margin: 8px 0 0; font-size: 0.9em; font-style: italic; line-height: 1.5; opacity: 0.9">
+    <em>For optimal results obtained in the paper, we still recommand using the <a href="https://github.com/vbercy/g2tm-segmenter/" style="color: #FFD700; text-decoration: underline;">main branch</a> with the NetworkX library.</em>
+  </p>
+</div>
+
 <p align="center">
-  <br> Authors: Victor BERCY, Martyna POREBA, Michal SZCZEPANSKI, Samia BOUCHAFA </br>
+  <br> <strong>Authors:</strong> <a href="https://orcid.org/0009-0006-0682-8927" style="color: #4752C4">Victor BERCY</a>, <a href="https://orcid.org/0000-0002-5102-7735" style="color: #4752C4">Martyna POREBA</a>, <a href="https://orcid.org/0009-0000-9061-4396" style="color: #4752C4">Michal SZCZEPANSKI</a>, <a href="https://orcid.org/0000-0002-2860-8128" style="color: #4752C4">Samia BOUCHAFA</a>
 </p>
 
 <p align="center">
@@ -11,7 +24,10 @@
   <img src="https://img.shields.io/badge/python-3.10-blue.svg" alt="Python versions">
 
   <!-- Version du projet -->
-  <img src="https://img.shields.io/badge/version-0.1-yellow.svg" alt="Version">
+  <img src="https://img.shields.io/badge/torch-1.13.1-red.svg" alt="Version">
+  
+  <!-- Licence -->
+  <img src="https://img.shields.io/badge/license-Apache2.0-green.svg" alt="License">
 
   <!-- Vérification du linting -->
   <a href="https://github.com/vbercy/g2tm-segmenter/actions/workflows/pylint.yml">
@@ -22,13 +38,20 @@
   <a href="https://github.com/vbercy/g2tm-segmenter/actions/workflows/python-package-conda.yml">
     <img src="https://github.com/vbercy/g2tm-segmenter/actions/workflows/python-package-conda.yml/badge.svg?branch=main" alt="Conda installation"/>
   </a>
+</p>
 
-  <!-- Licence -->
-  <img src="https://img.shields.io/badge/license-Apache2.0-green.svg" alt="License">
-
+<p align="center">
   <!-- Article -->
-  <a href="https://github.com/vbercy/g2tm-segmenter/blob/main/paper/G2TM_Single-Module_Graph-Guided_Token_Merging_for_Efficient_Semantic_Segmentation.pdf">
-    <img src="https://img.shields.io/badge/article-link.svg" alt="Article">
+  <a href="https://www.scitepress.org/Link.aspx?doi=10.5220/0014267600004084">
+    <img src="https://img.shields.io/badge/%F0%9F%93%83-Editor-yellow" alt="Article">
+  </a>
+  <!-- Article -->
+  <a href="https://cea.hal.science/cea-05578363">
+    <img src="https://img.shields.io/badge/%F0%9F%93%83-Open--source-brightgreen" alt="Article">
+  </a>
+  <!-- Repository -->
+  <a href="https://github.com/vbercy/g2tm-segmenter">
+    <img src="https://img.shields.io/badge/GitHub-gray.svg?style=flat&logo=github" alt="Repository">
   </a>
 </p>
 
@@ -55,7 +78,7 @@ cd g2tm-segmenter
 
 **2. Setting up a conda environment:**
 
-G2TM needs [PyTorch](https://pytorch.org/) ≥ 1.13.1 for the `scatter_reduce` method to work properly.
+G2TM targets [PyTorch](https://pytorch.org/) 1.13.1 and [NetworkX](https://networkx.org/en/) 3.4.2.
 
 ``` bash
 # create environment
@@ -123,7 +146,7 @@ We explain here the specific options for G2TM:
 
 **All training commands** can be run with or without G2TM using the `patch-type` option, as well as with or without (Inverse) Proportional Attention using the `prop-attn` or `iprop-attn` options.
 
-For more examples of training commands (e.g.: with curriculum, with Inverse Proportional Attention, etc.), see [TRAINING](./TRAINING.md).
+For more examples of training commands (e.g.: with curriculum, with Inverse Proportional Attention, etc.), see [TRAINING](../TRAINING.md).
 
 ## Inference
 
@@ -228,14 +251,16 @@ We explain here the specific options for G2TM:
 
 See [RESULTS](../RESULTS.md) for some comparative results for Segmenter + G2TM and the corresponding model checkpoints.
 
+**NOTE:** We are still looking for a solution to host all model checkpoints, in the meantime do not hesitate to request the checkpoints by contacting one of the authors.
+
 ## Upcoming Features 
 
 ```
 - [x] Training and Inference scripts
 - [x] Flops and Speedtest scripts
 - [x] Token and attention map visualization scripts
-- [x] Segmenter checkpoints for ADE20K and Cityscapes datasets
-- [ ] Segmenter checkpoints for Pascal-Context dataset
+- [x] Experiments on ADE20K and Cityscapes datasets
+- [ ] Experiments on Pascal-Context dataset
 - [ ] ONNX export script
 ```
 
@@ -245,7 +270,7 @@ This code extends the official [Segmenter](https://github.com/rstrudel/segmenter
 
 Inheriting from the Segmenter repository, the Vision Transformer code is based on [timm](https://github.com/rwightman/pytorch-image-models) library (under [Apache 2.0 Licence](https://github.com/huggingface/pytorch-image-models/blob/main/LICENSE)) and the semantic segmentation training and evaluation pipelines are using the [mmsegmentation](https://github.com/open-mmlab/mmsegmentation) and [mmcv](https://github.com/open-mmlab/mmcv) libraries (under [Apache 2.0 Licence](https://github.com/open-mmlab/mmsegmentation/blob/main/LICENSE)).
 
-All files covered by Segmenter's or ToMe's licences include a header indicating the licence and whether the file has been modified. You can find such files from Segmenter's repository in the [`segm`](../segm/) directory and from ToMe's repository in the [`patch`](./g2tm/patch/) and [`vis`](./g2tm/vis/) folders.
+All files covered by Segmenter's or ToMe's licences include a header indicating the licence and whether the file has been modified. You can find such files from Segmenter's repository in the [`segm`](../segm/) directory and from ToMe's repository in the [`patch`](./g2tm/patch/) and [`vis`](../g2tm/vis/) folders.
 
 Below are other Python librairies, along with their corresponding licenses, used in this work:
 - [Click](https://github.com/pallets/click) under [BSD-3-Clause License](https://github.com/pallets/click/blob/main/LICENSE.txt)
@@ -287,5 +312,16 @@ By contributing to G2TM, you agree that your contributions will be licensed unde
 If you cite G2TM or use this repository in your work, please cite:
 
 ```
-Bercy, V.; Poreba, M.; Szczepanski, M. and Bouchafa, S. (2026). G2TM: Single-Module Graph-Guided Token Merging for Efficient Semantic Segmentation.  In Proceedings of the 21st International Conference on Computer Vision Theory and Applications - Volume 2, ISBN 978-989-758-804-4, ISSN 2184-4321, pages 43-54.
+@conference{bercy2026g2tm,
+       author={Victor Bercy and Martyna Poreba and Michal Szczepanski and Samia Bouchafa},
+       title={G2TM: Single-Module Graph-Guided Token Merging for Efficient Semantic Segmentation},
+       booktitle={Proceedings of the 21st International Conference on Computer Vision Theory and Applications - Volume 2: VISAPP},
+       year={2026},
+       pages={43-54},
+       publisher={SciTePress},
+       organization={INSTICC},
+       doi={10.5220/0014267600004084},
+       isbn={978-989-758-804-4},
+       issn={2184-4321},
+}
 ```

@@ -8,7 +8,7 @@
     <strong>G2TM can now be run with PyTorch 2.4.1 and PyTorch Geometric!</strong>
   </p>
   <p style="margin: 8px 0 0">
-    The code can be found in the <a href="https://github.com/vbercy/g2tm-segmenter/torch2" style="color: #FFD700; text-decoration: underline;">`torch2` branch</a>
+    The code can be found in the <a href="https://github.com/vbercy/g2tm-segmenter/tree/torch2" style="color: #FFD700; text-decoration: underline;">`torch2` branch</a>
   </p>
   <p style="margin: 8px 0 0; font-size: 0.9em; font-style: italic; line-height: 1.5; opacity: 0.9">
     <em>For optimal results obtained in the paper, we still recommand using the <a href="https://github.com/vbercy/g2tm-segmenter/" style="color: #FFD700; text-decoration: underline;">main branch</a> with the NetworkX library.</em>

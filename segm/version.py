@@ -22,7 +22,7 @@
 # SOFTWARE.
 
 
-__version__ = "0.0.1b"
+__version__ = "0.0.1c"
 
 
 def parse_version_info(version_str):

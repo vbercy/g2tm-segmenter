@@ -40,9 +40,10 @@ def compute_labels(model, batch):
     """
     im = batch["im"]
     target = batch["target"]
+    amp_autocast = ptu.get_autocast(ptu.device.type == "cuda")
 
     with torch.no_grad():
-        with torch.cuda.amp.autocast():
+        with amp_autocast():
             output = model.forward(im)
     acc1, acc5 = accuracy(output, target, topk=(1, 5))
 

@@ -39,6 +39,9 @@
 
 
 import os
+import inspect
+from contextlib import nullcontext
+from functools import partial
 import torch
 
 
@@ -53,6 +56,41 @@ world_size = 1
 master_addr = "127.0.0.1"
 master_port = str(24900)
 
+try:
+    _TORCH_LOAD_PARAMS = inspect.signature(torch.load).parameters
+except (TypeError, ValueError):
+    _TORCH_LOAD_PARAMS = {}
+
+
+def get_autocast(enabled: bool):
+    """Return an autocast context factory compatible with Torch 2.x."""
+    if not enabled:
+        return nullcontext
+
+    device_type = device.type if device is not None else "cpu"
+    if device_type != "cuda":
+        return nullcontext
+
+    if hasattr(torch, "amp") and hasattr(torch.amp, "autocast"):
+        return partial(torch.amp.autocast, device_type=device_type)
+
+    return torch.cuda.amp.autocast
+
+
+def load_checkpoint(path, map_location="cpu", weights_only=False):
+    """Load Torch objects while preserving legacy behavior on newer Torch."""
+    load_kwargs = {"map_location": map_location}
+    if "weights_only" in _TORCH_LOAD_PARAMS:
+        load_kwargs["weights_only"] = weights_only
+    return torch.load(path, **load_kwargs)
+
+
+def get_ddp_device_ids():
+    """Return integer CUDA device ids for DDP, or None on CPU."""
+    if device is None or device.type != "cuda":
+        return None
+    return [gpu_id]
+
 
 def set_gpu_mode(mode):
     """ GPU wrappers
@@ -66,12 +104,13 @@ def set_gpu_mode(mode):
     global master_addr
     global master_port
 
-    world_size = torch.cuda.device_count()
+    cuda_device_count = torch.cuda.device_count()
     dist_rank = int(os.environ.get("LOCAL_RANK", 0))
-    gpu_id = dist_rank % world_size
+    gpu_id = dist_rank % max(cuda_device_count, 1)
 
+    use_gpu = mode and cuda_device_count > 0
+    world_size = cuda_device_count if use_gpu else 1
     distributed = world_size > 1
-    use_gpu = mode
     device = torch.device(f"cuda:{gpu_id}" if use_gpu else "cpu")
     torch.backends.cudnn.benchmark = True
 

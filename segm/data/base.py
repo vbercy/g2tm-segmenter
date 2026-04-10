@@ -37,17 +37,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
 from pathlib import Path
 
 import numpy as np
 import mmcv
-from mmcv.utils import Config
-from mmseg.datasets import build_dataset
+from mmengine.config import Config
+from mmseg.registry import DATASETS
+from mmseg.utils.set_env import register_all_modules
 
 from torch.utils.data import Dataset
 
 from segm.data.utils import STATS, IGNORE_LABEL
+
+
+register_all_modules(True)
 
 
 class BaseMMSeg(Dataset):
@@ -78,8 +81,39 @@ class BaseMMSeg(Dataset):
         self.ratio = config.max_ratio
         self.dataset = None
         self.config = self.update_default_config(config)
-        self.dataset = build_dataset(getattr(self.config.data,
-                                             f"{self.split}"))
+        self.dataset = self._build_dataset()
+
+    @staticmethod
+    def _cfg_get(config, key, default=None):
+        if config is None:
+            return default
+        if isinstance(config, dict):
+            return config.get(key, default)
+        return getattr(config, key, default)
+
+    def _get_dataset_cfg(self, config=None):
+        split = self.split
+        config = self.config if config is None else config
+
+        data_cfg = self._cfg_get(config, "data")
+        if data_cfg is not None and split in data_cfg:
+            return data_cfg[split]
+
+        dataloader_key = f"{split}_dataloader"
+        dataloader_cfg = self._cfg_get(config, dataloader_key)
+        if dataloader_cfg is None:
+            raise ValueError(f"Unable to find dataset config for split: {split}")
+
+        dataset_cfg = self._cfg_get(dataloader_cfg, "dataset")
+        if dataset_cfg is None:
+            raise ValueError(
+                f"Unable to find dataset entry in {dataloader_key} config."
+            )
+        return dataset_cfg
+
+    def _build_dataset(self):
+        dataset_cfg = self._get_dataset_cfg()
+        return DATASETS.build(dataset_cfg)
 
     def update_default_config(self, config):
         """ Update default configuration.
@@ -90,14 +124,11 @@ class BaseMMSeg(Dataset):
         else:
             config_pipeline = getattr(config, f"{self.split}_pipeline")
 
-        img_scale = (self.ratio * self.image_size, self.image_size)
-        if self.split not in train_splits:
-            assert config_pipeline[1]["type"] == "MultiScaleFlipAug"
-            config_pipeline = config_pipeline[1]["transforms"]
+        scales = (self.ratio * self.image_size, self.image_size)
         for i, op in enumerate(config_pipeline):
             op_type = op["type"]
             if op_type == "Resize":
-                op["img_scale"] = img_scale
+                op["scale"] = scales
             elif op_type == "RandomCrop":
                 op["crop_size"] = (
                     self.crop_size,
@@ -114,16 +145,12 @@ class BaseMMSeg(Dataset):
         elif self.split == "trainval":
             config.data.trainval.pipeline = config_pipeline
         elif self.split == "val":
-            config.data.val.pipeline[1]["img_scale"] = img_scale
-            config.data.val.pipeline[1]["transforms"] = config_pipeline
+            config.data.val.pipeline = config_pipeline
         elif self.split == "fps_val":
-            config.data.val.pipeline[1]["img_scale"] = img_scale
-            config.data.val.pipeline[1]["transforms"] = config_pipeline
-            config.data.val.pipeline[1]["flip"] = False
+            config.data.trainval.pipeline = config_pipeline
             config.data.fps_val.test_mode = True
         elif self.split == "test":
-            config.data.test.pipeline[1]["img_scale"] = img_scale
-            config.data.test.pipeline[1]["transforms"] = config_pipeline
+            config.data.trainval.pipeline = config_pipeline
             config.data.test.test_mode = True
         else:
             raise ValueError(f"Unknown split: {self.split}")
@@ -150,8 +177,7 @@ class BaseMMSeg(Dataset):
             1.75,
         ]
         self.config.data.test.pipeline[1]["flip"] = True
-        self.dataset = build_dataset(getattr(self.config.data,
-                                             f"{self.split}"))
+        self.dataset = self._build_dataset()
 
     def __getitem__(self, idx):
         data = self.dataset[idx]
@@ -159,18 +185,17 @@ class BaseMMSeg(Dataset):
         train_splits = ["train", "trainval"]
 
         if self.split in train_splits:
-            im = data["img"].data
-            seg = data["gt_semantic_seg"].data.squeeze(0)
+            im = data["inputs"].data
+            seg = data["data_samples"].gt_sem_seg.to_tensor().data.squeeze(0)
         else:
-            im = [im.data for im in data["img"]]
+            im = data["inputs"].data.unsqueeze(0)
             seg = None
 
         out = {"im": im}
         if self.split in train_splits:
             out["segmentation"] = seg
         else:
-            im_metas = [meta.data for meta in data["img_metas"]]
-            out["im_metas"] = im_metas
+            out["im_metas"] = [data["data_samples"].metainfo]
             out["colors"] = self.colors  # pylint: disable=E1101
 
         return out
@@ -180,14 +205,14 @@ class BaseMMSeg(Dataset):
         """
         dataset = self.dataset
         gt_seg_maps = {}
-        for img_info in dataset.img_infos:
-            seg_map = Path(dataset.ann_dir) / img_info["ann"]["seg_map"]
+        for data in dataset:
+            seg_map = Path(data["data_samples"].seg_map_path)
             gt_seg_map = mmcv.imread(seg_map, flag="unchanged",
                                      backend="pillow")
             gt_seg_map[gt_seg_map == self.ignore_label] = IGNORE_LABEL
             if self.reduce_zero_label:  # pylint: disable=E1101
                 gt_seg_map[gt_seg_map != IGNORE_LABEL] -= 1
-            gt_seg_maps[img_info["filename"]] = gt_seg_map
+            gt_seg_maps[data["data_samples"].img_path] = gt_seg_map
         return gt_seg_maps
 
     def __len__(self):

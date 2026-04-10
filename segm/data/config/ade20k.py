@@ -33,58 +33,49 @@ max_ratio = 4
 train_pipeline = [
     dict(type="LoadImageFromFile"),
     dict(type="LoadAnnotations", reduce_zero_label=True),
-    dict(type="Resize", img_scale=(512 * max_ratio, 512), ratio_range=(0.5, 2.0)),
+    dict(type="RandomResize", scale=(512 * max_ratio, 512),
+         ratio_range=(0.5, 2.0)),
     dict(type="RandomCrop", crop_size=crop_size, cat_max_ratio=0.75),
     dict(type="RandomFlip", prob=0.5),
     dict(type="PhotoMetricDistortion"),
     dict(type="Normalize", **img_norm_cfg),
-    dict(type="Pad", size=crop_size, pad_val=0, seg_pad_val=255),
-    dict(type="DefaultFormatBundle"),
-    dict(type="Collect", keys=["img", "gt_semantic_seg"]),
+    dict(type="Pad", size=crop_size, pad_val=dict(img=0, seg=255)),
+    dict(type="PackSegInputs"),
 ]
 val_pipeline = [
-    dict(type="LoadImageFromFile"),
-    dict(
-        type="MultiScaleFlipAug",
-        img_scale=(512 * max_ratio, 512),
-        flip=False,
-        transforms=[
-            dict(type="Resize", keep_ratio=True),
-            dict(type="RandomFlip"),
-            dict(type="Normalize", **img_norm_cfg),
-            dict(type="ImageToTensor", keys=["img"]),
-            dict(type="Collect", keys=["img"]),
-        ],
-    ),
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations', reduce_zero_label=True),
+    dict(type='Resize', scale=(512 * max_ratio, 512), keep_ratio=True),
+    dict(type='Normalize', **img_norm_cfg),
+    dict(type='PackSegInputs')
 ]
 test_pipeline = [
-    dict(type="LoadImageFromFile"),
-    dict(
-        type="MultiScaleFlipAug",
-        img_scale=(512 * max_ratio, 512),
-        flip=False,
-        transforms=[
-            dict(type="Resize", keep_ratio=True),
-            dict(type="RandomFlip"),
-            dict(type="Normalize", **img_norm_cfg),
-            dict(type="ImageToTensor", keys=["img"]),
-            dict(type="Collect", keys=["img"]),
-        ],
-    ),
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations', reduce_zero_label=True),
+    dict(type='Resize', scale=(512 * max_ratio, 512), keep_ratio=True),
+    dict(type='Normalize', **img_norm_cfg),
+    dict(type='PackSegInputs')
 ]
 fps_val_pipeline = [
-    dict(type="LoadImageFromFile"),
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations', reduce_zero_label=True),
+    dict(type='Resize', scale=(512 * max_ratio, 512), keep_ratio=True),
+    dict(type='Normalize', **img_norm_cfg),
+    dict(type='PackSegInputs')
+]
+tta_pipeline = [
+    dict(type='LoadImageFromFile', backend_args=None),
     dict(
-        type="MultiScaleFlipAug",
-        img_scale=(512, 512),
-        flip=False,
+        type='TestTimeAug',
         transforms=[
-            dict(type="Resize", img_scale=(512,512),keep_ratio=False),
-            dict(type="Normalize", **img_norm_cfg),
-            dict(type="ImageToTensor", keys=["img"]),
-            dict(type="Collect", keys=["img"]),
-        ],
-    ),
+            [dict(type='Resize', scale=(512 * max_ratio, 512), keep_ratio=True)],
+            [
+                dict(type='RandomFlip', prob=0.),
+                dict(type='RandomFlip', prob=1.)
+            ],
+            [dict(type='LoadAnnotations')],
+            [dict(type='PackSegInputs')]
+        ])
 ]
 data = dict(
     samples_per_gpu=4,
@@ -92,35 +83,38 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir="images/training",
-        ann_dir="annotations/training",
+        data_prefix=dict(img_path="images/training",
+                         seg_map_path="annotations/training"),
         pipeline=train_pipeline,
     ),
     trainval=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir=["images/training", "images/validation"],
-        ann_dir=["annotations/training", "annotations/validation"],
+        data_prefix=dict(
+            img_path=["images/training", "images/validation"],
+            seg_map_path=["annotations/training", "annotations/validation"]
+        ),
         pipeline=train_pipeline,
     ),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir="images/validation",
-        ann_dir="annotations/validation",
+        data_prefix=dict(img_path="images/validation",
+                         seg_map_path="annotations/validation"),
         pipeline=val_pipeline,
     ),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir="images/validation",  # "testing",
-        ann_dir="annotations/validation",
+        data_prefix=dict(img_path="images/validation",
+                         seg_map_path="annotations/validation"),
         pipeline=test_pipeline,
     ),
     fps_val=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir="images/validation",
+        data_prefix=dict(img_path="images/validation",
+                         seg_map_path=""),
         pipeline=fps_val_pipeline,
     ),
 )

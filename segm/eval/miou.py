@@ -110,7 +110,7 @@ def process_batch(
     ims_metas = batch["im_metas"]
     ori_shape = ims_metas[0]["ori_shape"]
     ori_shape = (ori_shape[0].item(), ori_shape[1].item())
-    filename = batch["im_metas"][0]["ori_filename"][0]
+    filename = batch["im_metas"][0]["img_path"][0]
 
     model_without_ddp = model
     if ptu.distributed:
@@ -149,9 +149,14 @@ def eval_dataset(
     dataset_name = dataset_kwargs["dataset"]
     # im_size = dataset_kwargs["image_size"]
     # cat_names = db.base_dataset.names
-    n_cls = db.unwrapped.n_cls
+    # n_cls = db.unwrapped.n_cls
     if multiscale:
         db.dataset.set_multiscale_mode()
+    dataset_meta = {
+        "classes": db.unwrapped.names,
+        "label_map": dict(),
+        "reduce_zero_label": db.unwrapped.reduce_zero_label,
+    }
 
     logger = MetricLogger(delimiter="  ")
     header = ""
@@ -214,9 +219,8 @@ def eval_dataset(
     scores = compute_metrics(
         seg_pred_maps,
         seg_gt_maps,
-        n_cls,
+        dataset_meta,
         ignore_index=IGNORE_LABEL,
-        ret_cat_iou=True,
         distributed=ptu.distributed,
     )
 
@@ -273,8 +277,12 @@ def main(model_path, dataset_name, im_size, multiscale, blend,
     model.eval()
     model.to(ptu.device)
     if ptu.distributed:
-        model = DDP(model, device_ids=[ptu.device],
-                    find_unused_parameters=True)
+        ddp_kwargs = {"find_unused_parameters": True}
+        ddp_device_ids = ptu.get_ddp_device_ids()
+        if ddp_device_ids is not None:
+            ddp_kwargs["device_ids"] = ddp_device_ids
+            ddp_kwargs["output_device"] = ddp_device_ids[0]
+        model = DDP(model, **ddp_kwargs)
 
     cfg = config.load_config()
     dataset_cfg = cfg["dataset"][dataset_name]

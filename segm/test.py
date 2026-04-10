@@ -14,7 +14,6 @@
 
 
 import warnings
-from contextlib import suppress
 
 import click
 import torch
@@ -70,10 +69,7 @@ def main(model_path: str, patch_type: str, selected_layer: int,
         p.requires_grad = False
     model.to(ptu.device)
 
-    if variant["amp"]:
-        amp_autocast = torch.cuda.amp.autocast
-    else:
-        amp_autocast = suppress
+    amp_autocast = ptu.get_autocast(variant["amp"])
 
     val_seg_gt = validation_loader.dataset.get_gt_seg_maps()
     eval_logger = evaluate(model, validation_loader, val_seg_gt,

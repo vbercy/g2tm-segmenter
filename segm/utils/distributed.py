@@ -53,7 +53,8 @@ def init_process(backend="nccl"):
     print(f"Starting process with rank {ptu.dist_rank} ({ptu.master_addr}:"
           f"{ptu.master_port})...", flush=True)
 
-    torch.cuda.set_device(ptu.dist_rank)
+    if ptu.use_gpu:
+        torch.cuda.set_device(ptu.gpu_id)
 
     dist.init_process_group(
         backend,
@@ -89,7 +90,13 @@ def sync_model(sync_dir, model):
         torch.save(model.state_dict(), sync_path)
     dist.barrier()
     if ptu.dist_rank > 0:
-        model.load_state_dict(torch.load(sync_path))
+        model.load_state_dict(
+            ptu.load_checkpoint(
+                sync_path,
+                map_location="cpu",
+                weights_only=False,
+            )
+        )
     dist.barrier()
     if ptu.dist_rank == 0 and ptu.world_size > 1:
         sync_path.unlink()

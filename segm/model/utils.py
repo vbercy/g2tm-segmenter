@@ -27,7 +27,7 @@ import math
 import torch
 from torch import nn
 import torch.nn.functional as F
-from timm.models.layers import trunc_normal_
+from timm.layers import trunc_normal_
 
 import segm.utils.torch as ptu
 
@@ -207,7 +207,7 @@ def inference(
     for im, im_metas in zip(ims, ims_metas):
         im = im.to(ptu.device)
         im = resize(im, window_size)
-        flip = im_metas["flip"]
+        flip = False  # im_metas["flip"]
         windows = sliding_window(im, flip, window_size, window_stride)
         crops = torch.stack(windows.pop("crop"))[:, 0]  # pylint: disable=E1101
         b = len(crops)

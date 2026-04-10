@@ -13,15 +13,11 @@
 # limitations under the License.
 
 import math
-from os import environ
 from typing import List, Tuple, Union
 
 import torch
 import torch.nn.functional as F
-import networkx as nx
-
-environ["NETWORKX_AUTOMATIC_BACKENDS"] = "cugraph"
-environ["NX_CUGRAPH_AUTOCONFIG"] = "True"
+from torch_geometric.data import Data
 
 MayBeTensor = Union[torch.Tensor, None]
 FourTensors = Tuple[torch.Tensor, torch.Tensor,
@@ -39,9 +35,9 @@ def get_mergeable_idxs(x_feat: torch.Tensor, threshold: float,
     This function computes the cosine similarity between all tokens and their
     respective 4-neighbors. Two tokens are neighbors if and only if the patches
     they represent in the image are neighbors. The similarity scores are then
-    thresholded. From the remaining edges between tokens, we create a NetworkX
-    graph and apply a graph search algorithm (Breadth First Search) to group
-    tokens to merge with each other into lists of indices.
+    thresholded. From the remaining edges between tokens, we create a PyTorch
+    Geometric graph and retrieve its connected components to group tokens to
+    merge with each other into lists of indices.
 
     Args :
         x_feat (torch.Tensor): Token feature sequence.
@@ -86,26 +82,55 @@ def get_mergeable_idxs(x_feat: torch.Tensor, threshold: float,
     right_mask[:, has_right_idxs] = right_sims > node_mean
     bottom_mask[:, has_bottom_idxs] = bottom_sims > node_mean
 
-    # Get all the connected components for all the batches in a list
-    # (i.e.: List[List[List, ...], ...])
-    connected_components = []
-    for bb in range(b):
-        # Get indices of tokens having a valid connection with its right and
-        # bottom neighbors
-        right_connections = right_mask[bb].nonzero()  # .cpu() (a bit longer)
-        bottom_connections = bottom_mask[bb].nonzero()  # .cpu() (a bit longer)
-        # Concatenate the tensors to get the pairs of connected tokens
-        src_nodes = torch.cat(  # pylint: disable=E1101
-            (right_connections, bottom_connections), dim=0
-        )
-        dst_nodes = torch.cat(  # pylint: disable=E1101
-            (right_connections + 1, bottom_connections + base_grid_w), dim=0
-        )
-        # Create NetworkX graph and find connected components
-        graph = nx.Graph(torch.cat((src_nodes, dst_nodes), dim=-1).tolist())  # pylint: disable=E1101
-        connected_components.append(
-            list(map(list, nx.connected_components(graph)))
-        )
+    # Build one disconnected graph for the whole batch to avoid repeating the
+    # PyG graph construction and connected-component search for each sample.
+    right_batch_idxs, right_connections = right_mask.nonzero(as_tuple=True)
+    bottom_batch_idxs, bottom_connections = bottom_mask.nonzero(as_tuple=True)
+    right_offsets = right_batch_idxs * n
+    bottom_offsets = bottom_batch_idxs * n
+
+    src_nodes = torch.cat(  # pylint: disable=E1101
+        (right_connections + right_offsets,
+         bottom_connections + bottom_offsets),
+        dim=0,
+    )
+    dst_nodes = torch.cat(  # pylint: disable=E1101
+        (right_connections + right_offsets + 1,
+         bottom_connections + bottom_offsets + base_grid_w),
+        dim=0,
+    )
+
+    connected_components = [[] for _ in range(b)]
+    graph = Data(
+        # Union-find only needs one copy of each edge.
+        edge_index=torch.stack((src_nodes, dst_nodes), dim=0),
+        num_nodes=b * n,
+    )
+
+    # Copy of the PyG connected_components() methods, keeping only the
+    # essential part of the code for the retrieval of the node indices
+    graph._parents = {}  # pylint: disable=W0212
+    graph._ranks = {}  # pylint: disable=W0212
+
+    for src_node, dst_node in graph.edge_index.t().tolist():
+        graph._union(src_node, dst_node)  # pylint: disable=W0212
+
+    for node in range(graph.num_nodes):
+        graph._find_parent(node)  # pylint: disable=W0212
+
+    grouped_nodes = {}
+    for node, parent in graph._parents.items():  # pylint: disable=W0212
+        grouped_nodes.setdefault(parent, []).append(node)
+
+    del graph._parents
+    del graph._ranks
+
+    for nodes in grouped_nodes.values():
+        if len(nodes) > 1:
+            batch_idx = nodes[0] // n
+            connected_components[batch_idx].append(
+                [node % n for node in nodes]
+            )
 
     return connected_components
 

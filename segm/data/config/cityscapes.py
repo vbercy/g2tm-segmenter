@@ -33,44 +33,42 @@ max_ratio = 2
 train_pipeline = [
     dict(type="LoadImageFromFile"),
     dict(type="LoadAnnotations"),
-    dict(type="Resize", img_scale=(2048, 1024), ratio_range=(0.5, 2.0)),
+    dict(type="RandomResize", scale=(2048, 1024), ratio_range=(0.5, 2.0)),
     dict(type="RandomCrop", crop_size=crop_size, cat_max_ratio=0.75),
     dict(type="RandomFlip", prob=0.5),
     dict(type="PhotoMetricDistortion"),
     dict(type="Normalize", **img_norm_cfg),
-    dict(type="Pad", size=crop_size, pad_val=0, seg_pad_val=255),
+    dict(type="Pad", size=crop_size, pad_val=dict(img=0, seg=255)),
     dict(type="DefaultFormatBundle"),
-    dict(type="Collect", keys=["img", "gt_semantic_seg"]),
+    dict(type="PackSegInputs"),
 ]
 val_pipeline = [
-    dict(type="LoadImageFromFile"),
-    dict(
-        type="MultiScaleFlipAug",
-        img_scale=(1024 * max_ratio, 1024),
-        flip=False,
-        transforms=[
-            dict(type="Resize", keep_ratio=True),
-            dict(type="RandomFlip"),
-            dict(type="Normalize", **img_norm_cfg),
-            dict(type="ImageToTensor", keys=["img"]),
-            dict(type="Collect", keys=["img"]),
-        ],
-    ),
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations', reduce_zero_label=True),
+    dict(type='Resize', scale=(1024 * max_ratio, 1024), keep_ratio=True),
+    dict(type='Normalize', **img_norm_cfg),
+    dict(type='PackSegInputs')
 ]
 test_pipeline = [
-    dict(type="LoadImageFromFile"),
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations', reduce_zero_label=True),
+    dict(type='Resize', scale=(1024 * max_ratio, 1024), keep_ratio=True),
+    dict(type='Normalize', **img_norm_cfg),
+    dict(type='PackSegInputs')
+]
+tta_pipeline = [
+    dict(type='LoadImageFromFile', backend_args=None),
     dict(
-        type="MultiScaleFlipAug",
-        img_scale=(1024 * max_ratio, 1024),
-        flip=False,
+        type='TestTimeAug',
         transforms=[
-            dict(type="Resize", keep_ratio=True),
-            dict(type="RandomFlip"),
-            dict(type="Normalize", **img_norm_cfg),
-            dict(type="ImageToTensor", keys=["img"]),
-            dict(type="Collect", keys=["img"]),
-        ],
-    ),
+            [dict(type='Resize', scale=(1024 * max_ratio, 1024), keep_ratio=True)],
+            [
+                dict(type='RandomFlip', prob=0.),
+                dict(type='RandomFlip', prob=1.)
+            ],
+            [dict(type='LoadAnnotations')],
+            [dict(type='PackSegInputs')]
+        ])
 ]
 data = dict(
     samples_per_gpu=2,
@@ -78,29 +76,31 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir="leftImg8bit/train",
-        ann_dir="gtFine/train",
+        data_prefix=dict(img_path='leftImg8bit/train',
+                         seg_map_path='gtFine/train'),
         pipeline=train_pipeline,
     ),
     trainval=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir=["leftImg8bit/train", "leftImg8bit/val"],
-        ann_dir=["gtFine/train", "gtFine/val"],
+        data_prefix=dict(
+            img_path=["leftImg8bit/train", "leftImg8bit/val"],
+            seg_map_path=["gtFine/train", "gtFine/val"]
+        ),
         pipeline=train_pipeline,
     ),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir="leftImg8bit/val",
-        ann_dir="gtFine/val",
+        data_prefix=dict(img_path='leftImg8bit/val',
+                         seg_map_path='gtFine/val'),
         pipeline=test_pipeline,
     ),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir="leftImg8bit/test",
-        ann_dir="gtFine/test",
+        data_prefix=dict(img_path='leftImg8bit/test',
+                         seg_map_path='gtFine/test'),
         pipeline=test_pipeline,
     ),
 )

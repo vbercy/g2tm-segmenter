@@ -26,7 +26,7 @@
 
 from torch import nn
 
-from timm.models.layers import DropPath
+from timm.layers import DropPath
 
 
 class FeedForward(nn.Module):

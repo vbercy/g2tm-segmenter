@@ -43,11 +43,10 @@ from pathlib import Path
 
 import yaml
 
-import torch
-from timm.models.helpers import load_pretrained, load_custom_pretrained
-from timm.models.vision_transformer import default_cfgs
-from timm.models.registry import register_model
-from timm.models.vision_transformer import _create_vision_transformer
+from timm.models import (load_pretrained, load_custom_pretrained,
+                         register_model)
+from timm.models.vision_transformer import (default_cfgs,
+                                            _create_vision_transformer)
 
 from segm.model.vit import VisionTransformer
 from segm.model.utils import checkpoint_filter_fn
@@ -109,7 +108,11 @@ def create_vit(model_cfg):
     if backbone == "vit_base_patch8_384":
         path = os.path.expandvars("$TORCH_HOME/hub/checkpoints/"
                                   "vit_base_patch8_384.pth")
-        state_dict = torch.load(path, map_location="cpu")
+        state_dict = ptu.load_checkpoint(
+            path,
+            map_location="cpu",
+            weights_only=False,
+        )
         filtered_dict = checkpoint_filter_fn(state_dict, model)
         model.load_state_dict(filtered_dict, strict=True)
     elif "deit" in backbone:
@@ -166,7 +169,11 @@ def load_model(model_path):
     net_kwargs = variant["net_kwargs"]
 
     model = create_segmenter(net_kwargs)
-    data = torch.load(model_path, map_location=ptu.device)
+    data = ptu.load_checkpoint(
+        model_path,
+        map_location="cpu",
+        weights_only=False,
+    )
     checkpoint = data["model"]
 
     model.load_state_dict(checkpoint, strict=True)

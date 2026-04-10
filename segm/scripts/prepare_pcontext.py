@@ -29,9 +29,8 @@ import tarfile
 import click
 from tqdm import tqdm
 
-import torch
-
 from segm.utils.download import download
+import segm.utils.torch as ptu
 
 
 def download_pcontext(path, overwrite=False):
@@ -101,7 +100,11 @@ def main(download_dir):
     train_torch_path = devkit_path / "VOC2010" / "train.pth"
     val_torch_path = devkit_path / "VOC2010" / "val.pth"
 
-    train_dict = torch.load(str(train_torch_path))
+    train_dict = ptu.load_checkpoint(
+        train_torch_path,
+        map_location="cpu",
+        weights_only=False,
+    )
 
     train_list = []
     for idx, label in tqdm(train_dict.items()):
@@ -114,7 +117,11 @@ def main(download_dir):
     with open(str(imageset_dir / "train.txt"), "w", encoding='utf-8') as f:
         f.writelines(line + "\n" for line in sorted(train_list))
 
-    val_dict = torch.load(str(val_torch_path))
+    val_dict = ptu.load_checkpoint(
+        val_torch_path,
+        map_location="cpu",
+        weights_only=False,
+    )
 
     val_list = []
     for idx, label in tqdm(val_dict.items()):

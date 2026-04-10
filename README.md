@@ -2,8 +2,21 @@
 
 ![G2TM Token Visualizations](./figs/visualisations.png)
 
+<div align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; color: white; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+  <h2 style="margin: 0; font-weight: 600;"><strong>🚀 Update available</strong></h2>
+  <p style="margin: 8px 0 0">
+    <strong>G2TM can now be run with PyTorch 2.4.1 and PyTorch Geometric!</strong>
+  </p>
+  <p style="margin: 8px 0 0">
+    The code can be found in the <a href="https://github.com/vbercy/g2tm-segmenter/torch2" style="color: #FFD700; text-decoration: underline;">`torch2` branch</a>
+  </p>
+  <p style="margin: 8px 0 0; font-size: 0.9em; font-style: italic; line-height: 1.5; opacity: 0.9">
+    <em>For optimal results obtained in the paper, we still recommand using the <a href="https://github.com/vbercy/g2tm-segmenter/" style="color: #FFD700; text-decoration: underline;">main branch</a> with the NetworkX library.</em>
+  </p>
+</div>
+
 <p align="center">
-  <br> Authors: <a href="https://orcid.org/0009-0006-0682-8927">Victor BERCY</a>, <a href="https://orcid.org/0000-0002-5102-7735">Martyna POREBA</a>, <a href="https://orcid.org/0009-0000-9061-4396">Michal SZCZEPANSKI</a>, <a href="https://orcid.org/0000-0002-2860-8128">Samia BOUCHAFA</a>
+  <br> <strong>Authors:</strong> <a href="https://orcid.org/0009-0006-0682-8927" style="color: #4752C4">Victor BERCY</a>, <a href="https://orcid.org/0000-0002-5102-7735" style="color: #4752C4">Martyna POREBA</a>, <a href="https://orcid.org/0009-0000-9061-4396" style="color: #4752C4">Michal SZCZEPANSKI</a>, <a href="https://orcid.org/0000-0002-2860-8128" style="color: #4752C4">Samia BOUCHAFA</a>
 </p>
 
 <p align="center">
@@ -59,29 +72,34 @@ In this section, we will explain how to set the environment up for this reposito
 **1. Clone the repository:**
 
 ``` bash
-git clone https://github.com/vbercy/g2tm-segmenter
+git clone -b torch2 https://github.com/vbercy/g2tm-segmenter
 cd g2tm-segmenter
 ```
 
 **2. Setting up a conda environment:**
 
-G2TM needs [PyTorch](https://pytorch.org/) 1.13.1 for the `scatter_reduce` method to work properly.
+G2TM targets [PyTorch](https://pytorch.org/) 2.4.1 and [PyTorch Geometric](https://pytorch-geometric.readthedocs.io/) 2.7.0.
 
 ``` bash
 # create environment
-conda create -n G2TM python==3.10.*
+conda create -n G2TM python==3.12.3
 conda activate G2TM
-# install pytorch with cuda
-conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
+# install Torch 2 using conda
+conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 pytorch-cuda=12.4 -c pytorch -c nvidia
+# install PyG using conda
+pip install torch_geometric
+pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.4.1+cu124.html
 ```
 
 **3. Installing the Segmenter requirements:**
 
 ``` bash
-# build tools to handle old packages
-pip install "MKL==2024.0.0" "setuptools<80.9.0" wheel
-# install mmcv separately
-pip install --no-build-isolation mmcv==1.7.2
+# install packaging helpers and the Torch 2-compatible OpenMMLab stack
+pip install openmim
+# Ignore conflict warning on setuptools~=60.2.0
+pip install setuptools==80.8.0
+mim install --no-build-isolation 'mmcv<2.2.0'
+mim install mmsegmentation
 # set up the Segmenter package
 pip install -v -e .
 ```
@@ -144,7 +162,7 @@ To perform an evaluation (mIoU) of a Segmenter model with G2TM on the dataset it
 **NOTE:** Please use the correct values for the `selected-layer` and `threshold` options for the evaluated model. You can find these values in the `variant.yaml` file.
 
 ```bash
-python ./segm/test.py <model_dir> \
+python ./segm/test.py <ckpt_file> \
        --patch-type graph \
        --selected-layer 2 \
        --threshold 0.88
@@ -154,7 +172,7 @@ Note that you can still use the evaluation script (mIoU, mAcc, pAcc) provided by
 
 ```bash
 # single-scale baseline + G2TM evaluation:
-python ./segm/eval/miou.py <model_dir> <dataset_name> \
+python ./segm/eval/miou.py <ckpt_file> <dataset_name> \
        --singlescale \
        --patch-type graph \
        --selected-layer 2 \
@@ -175,7 +193,7 @@ To calculate the throughput and GFLOPs of a model, execute the following command
 
 ```bash
 # Im/sec
-python ./segm/speedtest.py <model_dir> <dataset_name> \
+python ./segm/speedtest.py <ckpt_file> <dataset_name> \
        --batch-size 1 \
        --patch-type graph \
        --selected-layer 2 \
@@ -183,7 +201,7 @@ python ./segm/speedtest.py <model_dir> <dataset_name> \
 ```
 ```bash
 # GFLOPs
-python ./segm/flops.py <model_dir> <dataset_name> \
+python ./segm/flops.py <ckpt_file> <dataset_name> \
        --batch-size 1 \
        --patch-type graph \
        --selected-layer 2 \
@@ -193,7 +211,7 @@ python ./segm/flops.py <model_dir> <dataset_name> \
 To profile model activity during inference on CPU and GPU using PyTorch tools, use the following command:
 
 ```bash
-python ./segm/profile_model.py <model_dir> <dataset_name> \
+python ./segm/profile_model.py <ckpt_file> <dataset_name> \
        --patch-type graph \
        --selected-layer 2 \
        --threshold 0.88
@@ -206,7 +224,7 @@ python ./segm/profile_model.py <model_dir> <dataset_name> \
 To visualize segementation maps as well as the tokens and the attention maps at a specified layer for a specific image, execute the following command. It supports visualizations for both models with and without token reduction. For more details on the outputs, see the function documentation. In the example below, we generate visualization for a Segmenter model with G2TM applied at the 2nd layer with a threshold of 0.88.
 
 ```bash
-python ./segm/show_attn_map.py <model_path> <img_path> \
+python ./segm/show_attn_map.py <ckpt_file> <img_path> \
        <output_dir> <dataset_cmap> \
        --cls --enc --layer-id <layer> \
        --patch-type graph \
@@ -222,7 +240,7 @@ We explain here the specific options for G2TM:
 To get some statistics on the remaining tokens after merging, please run the following command:
 
 ```bash
-python ./segm/token_stats.py <model_path> <dataset> \
+python ./segm/token_stats.py <ckpt_file> <dataset> \
        --layer-id <layer> \
        --patch-type graph \
        --selected-layer 1
@@ -239,6 +257,8 @@ We explain here the specific options for G2TM:
 See [RESULTS](./RESULTS.md) for some comparative results for Segmenter + G2TM and the corresponding model checkpoints.
 
 **NOTE:** We are still looking for a solution to host all model checkpoints, in the meantime do not hesitate to request the checkpoints by contacting one of the authors.
+
+**WARNING: Results above are given using the NetworkX implementation of G2TM, therefore differences in the throughput scores can occur. We observe that the PyG implementation is slower that the NetworkX one. It may be subject to further optimisations.**
 
 ## Upcoming Features 
 

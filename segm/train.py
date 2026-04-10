@@ -41,7 +41,6 @@
 import json
 import argparse
 from pathlib import Path
-from contextlib import suppress
 import yaml
 import torch
 import click
@@ -299,17 +298,20 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
         opt_vars[k] = v
     optimizer = create_optimizer(opt_args, model)
     lr_scheduler = create_scheduler(opt_args, optimizer)
-    amp_autocast = suppress
+    amp_autocast = ptu.get_autocast(amp)
     loss_scaler = None
     if amp:
-        amp_autocast = torch.cuda.amp.autocast
         loss_scaler = NativeScaler()
 
     variant["algorithm_kwargs"]["start_epoch"] = 0
     # resume and fine tune
     if resume and checkpoint_path.exists():
         print(f"Resuming training from checkpoint: {checkpoint_path}")
-        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        checkpoint = ptu.load_checkpoint(
+            checkpoint_path,
+            map_location="cpu",
+            weights_only=False,
+        )
         model.load_state_dict(checkpoint["model"])
 
         if optimizer and "optimizer" in checkpoint:
@@ -330,8 +332,12 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
         sync_model(log_dir, model)
 
     if ptu.distributed:
-        model = DDP(model, device_ids=[ptu.device],
-                    find_unused_parameters=True)
+        ddp_kwargs = {"find_unused_parameters": True}
+        ddp_device_ids = ptu.get_ddp_device_ids()
+        if ddp_device_ids is not None:
+            ddp_kwargs["device_ids"] = ddp_device_ids
+            ddp_kwargs["output_device"] = ddp_device_ids[0]
+        model = DDP(model, **ddp_kwargs)
 
     # save config
     variant_str = yaml.dump(variant)

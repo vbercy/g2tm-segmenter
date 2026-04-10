@@ -45,7 +45,7 @@ import tempfile
 import shutil
 
 import numpy as np
-from mmseg.core import mean_iou
+from mmseg.evaluation import IoUMetric
 
 import torch
 import torch.distributed as dist
@@ -119,43 +119,42 @@ def gather_data(seg_pred, tmp_dir=None):
 def compute_metrics(
     seg_pred,
     seg_gt,
-    n_cls,
+    dataset_meta,
     ignore_index=None,
-    ret_cat_iou=False,
     distributed=False,
 ):
     """ Compute accuracy metrics for semantic segmentation task.
     """
+    iou_metric = IoUMetric(ignore_index=ignore_index,
+                          iou_metrics=["mIoU"]  # , "aAcc", "mAcc"],
+    )
+    iou_metric.dataset_meta = dataset_meta
+
     ret_metrics_mean = torch.zeros(3, dtype=float, device=ptu.device)  # pylint: disable=E1101
     if ptu.dist_rank == 0:
-        list_seg_pred = []
-        list_seg_gt = []
+        data_samples = []
         keys = sorted(seg_pred.keys())
         for k in keys:
-            list_seg_pred.append(np.asarray(seg_pred[k]))
-            list_seg_gt.append(np.asarray(seg_gt[k]))
-        ret_metrics = mean_iou(
-            results=list_seg_pred,
-            gt_seg_maps=list_seg_gt,
-            num_classes=n_cls,
-            ignore_index=ignore_index,
-        )
-        ret_metrics = [ret_metrics["aAcc"], ret_metrics["Acc"],
-                       ret_metrics["IoU"]]
+            data_samples.append(
+                {
+                    "pred_sem_seg": {"data": torch.tensor(seg_pred[k])},
+                    "gt_sem_seg": {"data": torch.tensor(seg_gt[k])},
+                    "img_path": k,
+                    "reduce_zero_label": dataset_meta["reduce_zero_label"]
+                }
+            )
+        iou_metric.process(None, data_samples)
+        ret_metrics = iou_metric.compute_metrics(iou_metric.results)
         ret_metrics_mean = torch.tensor(  # pylint: disable=E1101
-            [
-                np.round(np.nanmean(ret_metric.astype(np.float64)) * 100, 2)
-                for ret_metric in ret_metrics
-            ],
+            [ret_metrics["aAcc"], ret_metrics["mAcc"], ret_metrics["mIoU"]],
             dtype=float,
             device=ptu.device,
         )
-        cat_iou = ret_metrics[2]
+
     # broadcast metrics from 0 to all nodes
     if distributed:
         dist.broadcast(ret_metrics_mean, 0)
     pix_acc, mean_acc, miou = ret_metrics_mean
     ret = {"pixel_accuracy": pix_acc, "mean_accuracy": mean_acc, "mean_iou": miou}
-    if ret_cat_iou and ptu.dist_rank == 0:
-        ret["cat_iou"] = cat_iou  # pylint: disable=E0606
+
     return ret

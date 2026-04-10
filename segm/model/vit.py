@@ -26,7 +26,7 @@
 
 import torch
 from torch import nn
-from timm.models.layers import trunc_normal_
+from timm.layers import trunc_normal_
 from timm.models.vision_transformer import _load_weights
 
 from segm.model.utils import init_weights, resize_pos_embed

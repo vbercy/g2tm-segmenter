@@ -7,21 +7,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "g2tm"
-version = "0.1"
+version = "0.1b"
 description = "G2TM: Single Module Graph-Guided Token Merging for Efficient for Semantic Segmentation"
 readme = { file = "./README.md", content-type = "text/markdown" }
 authors = [
     { name="Victor BERCY", email="victor.bercy@cea.fr" }
 ]
 dependencies = [
-    "numpy<2",
-    "torch<2",
+    "numpy",
+    "torch>=2",
+    "torch-geometric",
     "torchvision",
     "opencv-python",
     "pillow",
     "scipy",
-    "networkx",
-    "nx-cugraph-cu11",
 ]
 
 [project.optional-dependencies]

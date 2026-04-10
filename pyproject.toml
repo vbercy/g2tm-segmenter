@@ -7,24 +7,28 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "segm"
-version = "0.0.1b"
+version = "0.0.1c"
 description = "Segmenter: Transformer for Semantic Segmentation adapted for G2TM."
 readme = { file = "./segm/README.md", content-type = "text/markdown" }
 dependencies = [
     "click",
-    "numpy<2",
+    "ftfy",
+    "regex",
+    "numpy",
     "einops",
     "python-hostlist",
     "tqdm",
     "requests",
     "pyyaml",
-    "torch<2",
+    "torch>=2",
+    "torchvision",
     "onnx",
     "onnxscript",
     "onnxruntime",
-    "timm==0.9",
-    "mmcv<2",
-    "mmsegmentation<1",
+    "onnxruntime-gpu",
+    "timm",
+    "mmcv<2.2.0",
+    "mmsegmentation==1.2.2",
     "fvcore",
     "cityscapesscripts",
     "tensorboard",

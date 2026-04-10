@@ -68,7 +68,7 @@ def onnx_inference(ort_session: ort.InferenceSession, batch: dict,
     img_metas = batch["im_metas"][0]
     ori_shape = img_metas["ori_shape"]
     ori_shape = (ori_shape[0].item(), ori_shape[1].item())
-    flip = img_metas["flip"]
+    flip = False
 
     img = resize(img, window_size)
     windows = sliding_window(img, flip, window_size, window_stride)
@@ -107,6 +107,12 @@ def eval_onnx_model(onnx_file: str, data_loader: Dataset,
     val_seg_gt = data_loader.dataset.get_gt_seg_maps()
     val_seg_pred = {}
 
+    dataset_meta = {
+        "classes": data_loader.unwrapped.names,
+        "label_map": dict(),
+        "reduce_zero_label": data_loader.unwrapped.reduce_zero_label,
+    }
+
     providers = [
         ('CUDAExecutionProvider', {'device_id': 0,
                                    'arena_extend_strategy': 'kNextPowerOfTwo',
@@ -123,7 +129,7 @@ def eval_onnx_model(onnx_file: str, data_loader: Dataset,
     print_freq = 50
 
     for batch in logger.log_every(data_loader, print_freq, header):
-        filename = batch["im_metas"][0]["ori_filename"][0]
+        filename = batch["im_metas"][0]["img_path"][0]
         seg_pred = onnx_inference(ort_session, batch, window_size,
                                   window_stride, data_loader.unwrapped.n_cls)
         seg_pred = np.argmax(seg_pred, axis=0)
@@ -133,7 +139,7 @@ def eval_onnx_model(onnx_file: str, data_loader: Dataset,
     scores = compute_metrics(
         val_seg_pred,
         val_seg_gt,
-        data_loader.unwrapped.n_cls,
+        dataset_meta,
         ignore_index=IGNORE_LABEL,
     )
 
@@ -203,7 +209,7 @@ def main(model_path: str, onnx_name: str, patch_type: str,
     onnx_model = onnx.load(onnx_file)
     onnx.checker.check_model(onnx_model)
     if verbose:
-        print(onnx.helper.printable_graph(onnx_model.graph))
+        print(onnx.printer.to_text(onnx_model.graph))
 
     print("Model exported to ONNX !")
 

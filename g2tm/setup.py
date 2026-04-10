@@ -30,7 +30,7 @@ def get_version():
 def readme():
     """ Returns README file as string.
     """
-    with open('../README.md', encoding='utf-8') as f:
+    with open('./README.md', encoding='utf-8') as f:
         content = f.read()
     return content
 
@@ -42,14 +42,13 @@ setup(
     description="G2TM: Single Module Graph-Guided Token Merging for Efficient"
                 "for Semantic Segmentation",
     install_requires=[
-        "numpy<2",
-        "torch<2",
+        "numpy",
+        "torch>=2",
+        "torch-geometric",
         "torchvision",
         "opencv-python",
         "pillow",
         "scipy",
-        "networkx",
-        "nx-cugraph-cu11",
     ],
     long_description=readme(),
     long_description_content_type="text/markdown",

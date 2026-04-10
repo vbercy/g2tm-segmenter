@@ -41,7 +41,7 @@
 from einops import rearrange
 import torch
 from torch import nn
-from timm.models.layers import trunc_normal_
+from timm.layers import trunc_normal_
 
 from segm.model.blocks import Block
 from segm.model.utils import init_weights

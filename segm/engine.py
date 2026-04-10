@@ -156,6 +156,12 @@ def evaluate(
     header = "Eval:"
     print_freq = 50
 
+    dataset_meta = {
+        "classes": data_loader.unwrapped.names,
+        "label_map": dict(),
+        "reduce_zero_label": data_loader.unwrapped.reduce_zero_label,
+    }
+
     val_seg_pred = {}
     model.eval()
     for batch in logger.log_every(data_loader, print_freq, header):
@@ -163,7 +169,7 @@ def evaluate(
         ims_metas = batch["im_metas"]
         ori_shape = ims_metas[0]["ori_shape"]
         ori_shape = (ori_shape[0].item(), ori_shape[1].item())
-        filename = batch["im_metas"][0]["ori_filename"][0]
+        filename = ims_metas[0]["img_path"][0]
 
         with amp_autocast():
             seg_pred = utils.inference(
@@ -184,7 +190,7 @@ def evaluate(
     scores = compute_metrics(
         val_seg_pred,
         val_seg_gt,
-        data_loader.unwrapped.n_cls,
+        dataset_meta,
         ignore_index=IGNORE_LABEL,
         distributed=ptu.distributed,
     )

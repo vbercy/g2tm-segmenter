@@ -92,13 +92,13 @@ def create_vit(model_cfg):
     mlp_expansion_ratio = 4
     model_cfg["d_ff"] = mlp_expansion_ratio * model_cfg["d_model"]
 
-    default_cfg = (default_cfgs.get(backbone,
+    default_cfg = default_cfgs.get(backbone,
                                    {"pretrained": False,
                                     "num_classes": 1000,
                                     "drop_rate": 0.0,
                                     "drop_path_rate": 0.0,
                                     "drop_block_rate": None}
-    )).cfgs
+    ).copy()
 
     default_cfg["input_size"] = (
         3,

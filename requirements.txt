@@ -9,7 +9,8 @@ torch<2
 onnx
 onnxscript
 onnxruntime
-timm==0.9
+onnxruntime-gpu
+timm==0.4.12
 mmcv<2
 mmsegmentation<1
 fvcore

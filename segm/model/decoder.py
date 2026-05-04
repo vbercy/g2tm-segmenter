@@ -38,7 +38,6 @@
 # SOFTWARE.
 
 
-from einops import rearrange
 import torch
 from torch import nn
 from timm.models.layers import trunc_normal_
@@ -69,25 +68,21 @@ class DecoderLinear(nn.Module):
     def forward(self, x, im_size, token_reduction):
         """ Forward function.
         """
-        h, _ = im_size
-        gs = h // self.patch_size
-        b, n, c = x.shape
+        h, w = im_size
+        gh = h // self.patch_size
+        gw = w // self.patch_size
+        b, _, c = x.shape
         x = self.head(x)
 
         if token_reduction:
-            if self.info["mask"] is None:
-                idxs = self.info["source"].argmax(dim=1)
-                x_ = torch.ones(1, n, c, device=x.device)  # pylint: disable=E1101
-                x_[0, :, :] = x[0, idxs[0]]
-            else:
-                x_ = torch.ones(b, n, c, device=x.device)  # pylint: disable=E1101
-                for batch in range(0, b):
-                    idxs = self.info["source"][batch].argmax(dim=0)
-                    x_[batch, :, :] = x[batch, idxs]
+            x_ = torch.ones(b, gh*gw, c, device=x.device)  # pylint: disable=E1101
+            for batch in range(0, b):
+                idxs = self.info["source"][batch].argmax(dim=0)
+                x_[batch, :, :] = x[batch, idxs]
         else:
             x_ = x
 
-        x_ = rearrange(x_, "b (h w) c -> b c h w", h=gs)
+        x_ = x_.reshape(b, gh, gw, c).permute(0, 3, 1, 2)
 
         return x_
 
@@ -194,7 +189,7 @@ class MaskTransformer(nn.Module):
                 masks_[batch, :, :] = masks[batch, idxs]
         else:
             masks_ = masks
-        masks_ = rearrange(masks_, "b (h w) n -> b n h w", h=int(gh))
+        masks_ = masks_.reshape(b, gh, gw, masks_dim).permute(0, 3, 1, 2)
 
         return masks_
 

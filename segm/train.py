@@ -74,6 +74,7 @@ import g2tm
 @click.option("--optimizer", default="sgd", type=str)
 @click.option("--scheduler", default="polynomial", type=str)
 @click.option("--weight-decay", default=0.0, type=float)
+@click.option("--momentum", default=0.9, type=float)
 @click.option("--dropout", default=0.0, type=float)
 @click.option("--drop-path", default=0.1, type=float)
 @click.option("--batch-size", default=None, type=int)
@@ -98,11 +99,12 @@ import g2tm
 @click.option("--iprop-attn/--no-iprop-attn", default=False, is_flag=True)
 @click.option("--n-cycles", default=None, type=int)
 def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
-         backbone, decoder, optimizer, scheduler, weight_decay, dropout,
-         drop_path, batch_size, epochs, learning_rate, minlearning_rate,
-         warmup_epochs, start_factor, normalization, eval_freq, amp, resume,
-         patch_type, selected_layer, threshold, start_thresh, curric_warmup,
-         curric_period, curric_thresh, prop_attn, iprop_attn, n_cycles):
+         backbone, decoder, optimizer, scheduler, weight_decay, momentum,
+         dropout, drop_path, batch_size, epochs, learning_rate,
+         minlearning_rate, warmup_epochs, start_factor, normalization,
+         eval_freq, amp, resume, patch_type, selected_layer, threshold,
+         start_thresh, curric_warmup, curric_period, curric_thresh, prop_attn,
+         iprop_attn, n_cycles):
     """Model training with or without token reduction.
 
     Args:
@@ -116,7 +118,8 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
         decoder (str): Architecture of the decoder.
         optimizer (str): Optimizer to use.
         scheduler (str): Learning rate scheduler to use.
-        weight_decay (float): Weigth decay value.
+        weight_decay (float): Weight decay value.
+        momentum (float): Momentum value
         dropout (float): dropout probability applied to attention weights.
         drop_path (float): Probability of dropping the residual path.
         batch_size (int): Number of images per batch.
@@ -236,7 +239,7 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
             opt=optimizer,
             lr=lr,
             weight_decay=weight_decay,
-            momentum=0.9,
+            momentum=momentum,
             clip_grad=None,
             sched=scheduler,
             epochs=epochs,
@@ -419,22 +422,21 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
             )
 
             writer.add_scalar("val_pixel_acc",
-                              eval_logger.pixel_accuracy.median,
+                              eval_logger.pixel_accuracy.global_avg,
                               epoch, new_style=True)
             writer.add_scalar("val_mean_acc",
-                              eval_logger.mean_accuracy.median,
+                              eval_logger.mean_accuracy.global_avg,
                               epoch, new_style=True)
             writer.add_scalar("val_mean_iou",
-                              eval_logger.mean_iou.median,
+                              eval_logger.mean_iou.global_avg,
                               epoch, new_style=True)
 
             print(f"Stats [{epoch}]:", eval_logger, flush=True)
             print(str(eval_logger.mean_iou).split(" ", maxsplit=1)[0])
             print("")
 
-            curr_checkpoint = (str(eval_logger.mean_iou)
-                                .split(" ", maxsplit=1)[0])
-            if float(curr_checkpoint) > best_checkpoint:
+            curr_checkpoint = eval_logger.mean_iou.global_avg
+            if curr_checkpoint > best_checkpoint and ptu.dist_rank == 0:
                 print("saving the best checkpoint ...")
                 best_checkpoint = float(curr_checkpoint)
                 best_checkpoint_name = (

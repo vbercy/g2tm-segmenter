@@ -119,8 +119,8 @@ class Segmenter(nn.Module):
             self.encoder.info["size"] = (
                 self.encoder.info["size"][:, num_extra_tokens:]
             )
-            if self.info["mask"] is not None:
-                self.info["mask"] = self.info["mask"][:, num_extra_tokens:]
+            if self.encoder.info["mask"] is not None:
+                self.encoder.info["mask"] = self.encoder.info["mask"][:, num_extra_tokens:]
 
         return self.decoder.get_attention_map(x, layer_id,
                                               self.token_reduction)

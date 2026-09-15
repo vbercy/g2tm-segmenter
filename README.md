@@ -11,7 +11,7 @@
     The new repository can be found <a href="https://github.com/vbercy/g2tm" style="color: #FFD700; text-decoration: underline;">here</a>
   </p>
   <p style="margin: 8px 0 0; font-size: 0.9em; font-style: italic; line-height: 1.5; opacity: 0.9">
-    <em>What's new: Support **SETR** and **EoMT** segmentation models as well as **ViT** for classification, **ONNX export** available, **custom connected component retrieval algorithms** instead of NetworkX, ...</em>
+    <em>What's new: Support <strong>SETR</strong> and <strong>EoMT</strong> segmentation models as well as <strong>ViT</strong> for classification, <strong>ONNX export</strong> available, <strong>custom connected component retrieval algorithms</strong> instead of NetworkX, ...</em>
   </p>
 </div>
 

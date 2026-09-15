@@ -5,13 +5,13 @@
 <div align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; color: white; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
   <h2 style="margin: 0; font-weight: 600;"><strong>🚀 Update available</strong></h2>
   <p style="margin: 8px 0 0">
-    <strong>G2TM can now be run with PyTorch 2.4.1 and PyTorch Geometric!</strong>
+    <strong>A new version of G2TM is now available for several ViT-based models, running with PyTorch 2!</strong>
   </p>
   <p style="margin: 8px 0 0">
-    The code can be found in the <a href="https://github.com/vbercy/g2tm-segmenter/tree/torch2" style="color: #FFD700; text-decoration: underline;">`torch2` branch</a>
+    The new repository can be found <a href="https://github.com/vbercy/g2tm" style="color: #FFD700; text-decoration: underline;">here</a>
   </p>
   <p style="margin: 8px 0 0; font-size: 0.9em; font-style: italic; line-height: 1.5; opacity: 0.9">
-    <em>For optimal results obtained in the paper, we still recommand using the <a href="https://github.com/vbercy/g2tm-segmenter/" style="color: #FFD700; text-decoration: underline;">main branch</a> with the NetworkX library.</em>
+    <em>What's new: Support **SETR** and **EoMT** segmentation models as well as **ViT** for classification, **ONNX export** available, **custom connected component retrieval algorithms** instead of NetworkX, ...</em>
   </p>
 </div>
 
@@ -259,9 +259,8 @@ See [RESULTS](./RESULTS.md) for some comparative results for Segmenter + G2TM an
 - [x] Training and Inference scripts
 - [x] Flops and Speedtest scripts
 - [x] Token and attention map visualization scripts
-- [x] Experiments on ADE20K and Cityscapes datasets
-- [ ] Experiments on Pascal-Context dataset
-- [ ] ONNX export script
+- [x] Results on ADE20K and Cityscapes datasets
+- [ ] Results on Pascal-Context dataset
 ```
 
 ## Acknowledgements
@@ -279,8 +278,6 @@ Below are other Python librairies, along with their corresponding licenses, used
 - [Matplotlib](https://github.com/matplotlib/matplotlib) under [PSF License](https://matplotlib.org/stable/project/license.html)
 - [NetworkX](https://github.com/networkx/networkx) under [BSD-3-Clause License](https://github.com/networkx/networkx/blob/main/LICENSE.txt)
 - [Numpy](https://github.com/numpy/numpy) under [BSD-3-Clause License](https://github.com/numpy/numpy/blob/main/LICENSE.txt)
-- [ONNX](https://github.com/onnx/onnx) under [Apache 2.0 License](https://github.com/onnx/onnx/blob/main/LICENSE)
-- [ONNXRuntime](https://github.com/microsoft/onnxruntime) under [MIT License](https://github.com/microsoft/onnxruntime/blob/main/LICENSE)
 - [OpenCV](https://github.com/opencv/opencv-python) under [MIT License](https://github.com/opencv/opencv-python/blob/4.x/LICENSE.txt)
 - [Pillow](https://github.com/python-pillow/Pillow) under [MIT-CMU License](https://github.com/python-pillow/Pillow/blob/main/LICENSE)
 - [PyTorch](https://github.com/pytorch/pytorch) under [BSD-3-Clause License](https://github.com/pytorch/pytorch/blob/main/LICENSE)

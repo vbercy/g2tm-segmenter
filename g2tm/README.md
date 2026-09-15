@@ -5,13 +5,13 @@
 <div align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; color: white; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
   <h2 style="margin: 0; font-weight: 600;"><strong>🚀 Update available</strong></h2>
   <p style="margin: 8px 0 0">
-    <strong>G2TM can now be run with PyTorch 2.4.1 and PyTorch Geometric!</strong>
+    <strong>A new version of G2TM is now available for several ViT-based models, running with PyTorch 2!</strong>
   </p>
   <p style="margin: 8px 0 0">
-    The code can be found in the <a href="https://github.com/vbercy/g2tm-segmenter/tree/torch2" style="color: #FFD700; text-decoration: underline;">`torch2` branch</a>
+    The new repository can be found <a href="https://github.com/vbercy/g2tm" style="color: #FFD700; text-decoration: underline;">here</a>
   </p>
   <p style="margin: 8px 0 0; font-size: 0.9em; font-style: italic; line-height: 1.5; opacity: 0.9">
-    <em>For optimal results obtained in the paper, we still recommand using the <a href="https://github.com/vbercy/g2tm-segmenter/" style="color: #FFD700; text-decoration: underline;">main branch</a> with the NetworkX library.</em>
+    <em>What's new: Support **SETR** and **EoMT** segmentation models as well as **ViT** for classification, **ONNX export** available, **custom connected component retrieval algorithms** instead of NetworkX, ...</em>
   </p>
 </div>
 
@@ -146,7 +146,7 @@ We explain here the specific options for G2TM:
 
 **All training commands** can be run with or without G2TM using the `patch-type` option, as well as with or without (Inverse) Proportional Attention using the `prop-attn` or `iprop-attn` options.
 
-For more examples of training commands (e.g.: with curriculum, with Inverse Proportional Attention, etc.), see [TRAINING](../TRAINING.md).
+For more examples of training commands (e.g.: with curriculum, with Inverse Proportional Attention, etc.), see [TRAINING](./TRAINING.md).
 
 ## Inference
 
@@ -157,7 +157,7 @@ To perform an evaluation (mIoU) of a Segmenter model with G2TM on the dataset it
 **NOTE:** Please use the correct values for the `selected-layer` and `threshold` options for the evaluated model. You can find these values in the `variant.yaml` file.
 
 ```bash
-python ./segm/test.py <model_dir> \
+python ./segm/test.py <ckpt_file> \
        --patch-type graph \
        --selected-layer 2 \
        --threshold 0.88
@@ -167,7 +167,7 @@ Note that you can still use the evaluation script (mIoU, mAcc, pAcc) provided by
 
 ```bash
 # single-scale baseline + G2TM evaluation:
-python ./segm/eval/miou.py <model_dir> <dataset_name> \
+python ./segm/eval/miou.py <ckpt_file> <dataset_name> \
        --singlescale \
        --patch-type graph \
        --selected-layer 2 \
@@ -188,7 +188,7 @@ To calculate the throughput and GFLOPs of a model, execute the following command
 
 ```bash
 # Im/sec
-python ./segm/speedtest.py <model_dir> <dataset_name> \
+python ./segm/speedtest.py <ckpt_file> <dataset_name> \
        --batch-size 1 \
        --patch-type graph \
        --selected-layer 2 \
@@ -196,7 +196,7 @@ python ./segm/speedtest.py <model_dir> <dataset_name> \
 ```
 ```bash
 # GFLOPs
-python ./segm/flops.py <model_dir> <dataset_name> \
+python ./segm/flops.py <ckpt_file> <dataset_name> \
        --batch-size 1 \
        --patch-type graph \
        --selected-layer 2 \
@@ -206,7 +206,7 @@ python ./segm/flops.py <model_dir> <dataset_name> \
 To profile model activity during inference on CPU and GPU using PyTorch tools, use the following command:
 
 ```bash
-python ./segm/profile_model.py <model_dir> <dataset_name> \
+python ./segm/profile_model.py <ckpt_file> <dataset_name> \
        --patch-type graph \
        --selected-layer 2 \
        --threshold 0.88
@@ -219,7 +219,7 @@ python ./segm/profile_model.py <model_dir> <dataset_name> \
 To visualize segementation maps as well as the tokens and the attention maps at a specified layer for a specific image, execute the following command. It supports visualizations for both models with and without token reduction. For more details on the outputs, see the function documentation. In the example below, we generate visualization for a Segmenter model with G2TM applied at the 2nd layer with a threshold of 0.88.
 
 ```bash
-python ./segm/show_attn_map.py <model_path> <img_path> \
+python ./segm/show_attn_map.py <ckpt_file> <img_path> \
        <output_dir> <dataset_cmap> \
        --cls --enc --layer-id <layer> \
        --patch-type graph \
@@ -235,7 +235,7 @@ We explain here the specific options for G2TM:
 To get some statistics on the remaining tokens after merging, please run the following command:
 
 ```bash
-python ./segm/token_stats.py <model_path> <dataset> \
+python ./segm/token_stats.py <ckpt_file> <dataset> \
        --layer-id <layer> \
        --patch-type graph \
        --selected-layer 1
@@ -259,9 +259,8 @@ See [RESULTS](../RESULTS.md) for some comparative results for Segmenter + G2TM a
 - [x] Training and Inference scripts
 - [x] Flops and Speedtest scripts
 - [x] Token and attention map visualization scripts
-- [x] Experiments on ADE20K and Cityscapes datasets
-- [ ] Experiments on Pascal-Context dataset
-- [ ] ONNX export script
+- [x] Results on ADE20K and Cityscapes datasets
+- [ ] Results on Pascal-Context dataset
 ```
 
 ## Acknowledgements
@@ -270,7 +269,7 @@ This code extends the official [Segmenter](https://github.com/rstrudel/segmenter
 
 Inheriting from the Segmenter repository, the Vision Transformer code is based on [timm](https://github.com/rwightman/pytorch-image-models) library (under [Apache 2.0 Licence](https://github.com/huggingface/pytorch-image-models/blob/main/LICENSE)) and the semantic segmentation training and evaluation pipelines are using the [mmsegmentation](https://github.com/open-mmlab/mmsegmentation) and [mmcv](https://github.com/open-mmlab/mmcv) libraries (under [Apache 2.0 Licence](https://github.com/open-mmlab/mmsegmentation/blob/main/LICENSE)).
 
-All files covered by Segmenter's or ToMe's licences include a header indicating the licence and whether the file has been modified. You can find such files from Segmenter's repository in the [`segm`](../segm/) directory and from ToMe's repository in the [`patch`](./g2tm/patch/) and [`vis`](../g2tm/vis/) folders.
+All files covered by Segmenter's or ToMe's licences include a header indicating the licence and whether the file has been modified. You can find such files from Segmenter's repository in the [`segm`](../segm/) directory and from ToMe's repository in the [`patch`](./g2tm/patch/) and [`vis`](./g2tm/vis/) folders.
 
 Below are other Python librairies, along with their corresponding licenses, used in this work:
 - [Click](https://github.com/pallets/click) under [BSD-3-Clause License](https://github.com/pallets/click/blob/main/LICENSE.txt)
@@ -279,8 +278,6 @@ Below are other Python librairies, along with their corresponding licenses, used
 - [Matplotlib](https://github.com/matplotlib/matplotlib) under [PSF License](https://matplotlib.org/stable/project/license.html)
 - [NetworkX](https://github.com/networkx/networkx) under [BSD-3-Clause License](https://github.com/networkx/networkx/blob/main/LICENSE.txt)
 - [Numpy](https://github.com/numpy/numpy) under [BSD-3-Clause License](https://github.com/numpy/numpy/blob/main/LICENSE.txt)
-- [ONNX](https://github.com/onnx/onnx) under [Apache 2.0 License](https://github.com/onnx/onnx/blob/main/LICENSE)
-- [ONNXRuntime](https://github.com/microsoft/onnxruntime) under [MIT License](https://github.com/microsoft/onnxruntime/blob/main/LICENSE)
 - [OpenCV](https://github.com/opencv/opencv-python) under [MIT License](https://github.com/opencv/opencv-python/blob/4.x/LICENSE.txt)
 - [Pillow](https://github.com/python-pillow/Pillow) under [MIT-CMU License](https://github.com/python-pillow/Pillow/blob/main/LICENSE)
 - [PyTorch](https://github.com/pytorch/pytorch) under [BSD-3-Clause License](https://github.com/pytorch/pytorch/blob/main/LICENSE)

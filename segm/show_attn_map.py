@@ -36,11 +36,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""Script to visualize attention maps, tokens and segmentation predictions of
+a model for a specific image.
 
+Example: see README.md
+"""
 
 from pathlib import Path
 
 import click
+import yaml
 import einops
 import matplotlib.pyplot as plt
 import numpy as np
@@ -61,8 +66,13 @@ import segm.utils.torch as ptu
 import g2tm
 
 
-def save_attention_map(attention_map: torch.Tensor, img_vis: Image.Image,
-                       dir_path: Path, file_name: str, cmap: str):
+def save_attention_map(
+    attention_map: torch.Tensor,
+    img_vis: Image.Image,
+    dir_path: Path,
+    file_name: str,
+    cmap: str,
+):
     """Save an overlay of attention map on the image as PNG file.
 
     This function saves a PNG file containing an attention map (per patch)
@@ -80,24 +90,23 @@ def save_attention_map(attention_map: torch.Tensor, img_vis: Image.Image,
     file_path_atten_overly = dir_path / f"{file_name}_overlay.png"
     attention_map_ = gaussian_filter(attention_map, sigma=10)
 
-    plt.imsave(fname=str(file_path), arr=attention_map_,
-               format="png", cmap=cmap)
+    plt.imsave(fname=str(file_path), arr=attention_map_, format="png", cmap=cmap)
 
     # overlay image
-    attention_weights_normalized = (
-        (attention_map - np.min(attention_map)) /
-        (np.max(attention_map) - np.min(attention_map))
+    attention_weights_normalized = (attention_map - np.min(attention_map)) / (
+        np.max(attention_map) - np.min(attention_map)
     )
     attention_weights_normalized = gaussian_filter(
         attention_weights_normalized, sigma=10
     )
 
     attention_map = (
-        np.array(img_vis) * 0.6 +
-        plt.get_cmap('jet')(attention_weights_normalized)[:, :, :3] * 255 * 0.4
+        np.array(img_vis) * 0.6
+        + plt.get_cmap("jet")(attention_weights_normalized)[:, :, :3] * 255 * 0.4
     ).astype(np.uint8)
-    plt.imsave(fname=str(file_path_atten_overly), arr=attention_map,
-               format="png", cmap=cmap)
+    plt.imsave(
+        fname=str(file_path_atten_overly), arr=attention_map, format="png", cmap=cmap
+    )
     print(f"{file_path} saved.")
 
 
@@ -117,9 +126,23 @@ def save_attention_map(attention_map: torch.Tensor, img_vis: Image.Image,
 @click.option("--threshold", default=0.88, type=float)
 @click.option("--prop-attn/--no-prop-attn", default=False, is_flag=True)
 @click.option("--iprop-attn/--no-iprop-attn", default=False, is_flag=True)
-def visualize(model_path, image_path, output_dir, cmap_file,
-              layer_id, x_patch, y_patch, cls, enc, cmap,
-              patch_type, selected_layer, threshold, prop_attn, iprop_attn):
+def visualize(
+    model_path,
+    image_path,
+    output_dir,
+    cmap_file,
+    layer_id,
+    x_patch,
+    y_patch,
+    cls,
+    enc,
+    cmap,
+    patch_type,
+    selected_layer,
+    threshold,
+    prop_attn,
+    iprop_attn,
+):
     """Attention, token and prediction visualizations of the model.
 
     This function creates several attention, token and predicition
@@ -150,8 +173,11 @@ def visualize(model_path, image_path, output_dir, cmap_file,
         layer_id (int): Layer to visualize (0-based)
         x_patch (int): X-coordinate of the selected patch (optional).
         y_patch (int): Y-coordinate of the selected patch (optional).
-        cls (bool): Whether to compute attention from the [CLS] token (True)
-        or any selected patch (False).
+        cls (bool): Whether to compute attention from the class token(s) (True)
+        or any selected patch (False). In the encoder, the class token is the
+        [CLS] token, so a single map is produced. In the decoder, the class
+        tokens are the n_cls class embeddings of the Mask Transformer, so one
+        map per class present in the groundtruth is produced.
         enc (bool): Whether the visualizations are made in the encoder (True)
         or in the decoder (False).
         cmap (str): Colormap used for attention visualizations.
@@ -170,8 +196,9 @@ def visualize(model_path, image_path, output_dir, cmap_file,
     model, variant = load_model(model_path)
 
     if patch_type == "graph":
-        g2tm.graph_segmenter_patch(model, selected_layer, threshold,
-                                   prop_attn, iprop_attn)
+        g2tm.graph_segmenter_patch(
+            model, selected_layer, threshold, prop_attn, iprop_attn
+        )
 
     model.eval()
     for p in model.parameters():
@@ -206,35 +233,39 @@ def visualize(model_path, image_path, output_dir, cmap_file,
         img = img_transform(img)
     except Exception as e:
         print(e)
-        raise ValueError(f"Provided image path {image_path}"
-                         " is not a valid image file.") from e
+        raise ValueError(
+            f"Provided image path {image_path}" " is not a valid image file."
+        ) from e
 
     # Open the segmentation groundtruth and process it
     if dataset == "ade20k":
-        seg_input_path = (
-            image_path.replace("images", "annotations")
-                      .replace("jpg", "png")
+        seg_input_path = image_path.replace("images", "annotations").replace(
+            "jpg", "png"
         )
     elif dataset == "cityscapes":
-        seg_input_path = (
-            image_path.replace("images", "annotations")
-                      .replace("leftImg8bit", "gtFine_labelTrainIds")
+        seg_input_path = image_path.replace("images", "annotations").replace(
+            "leftImg8bit", "gtFine_labelTrainIds"
         )
     else:
         seg_input_path = "OTHER/DATASET/NOT_SUPPORTED.fail"
-    image_name = seg_input_path.split('/')[-1].split('.')[0]
+    image_name = seg_input_path.split("/")[-1].split(".")[0]
 
     try:
-        with open(seg_input_path, 'rb') as f:
+        with open(seg_input_path, "rb") as f:
             seg_gt = Image.open(f)
             seg_resized = seg_gt.resize((crop_size, crop_size))
         f.close()
         seg_gt = torch.tensor(np.array(seg_gt))  # pylint: disable=E1101
         seg_resized = np.array(seg_resized)
 
-        # get class ids
+        # Get the ids of the classes present in the groundtruth, mapped to the
+        # indices of the class embeddings of the decoder, i.e. [0, n_cls)
         class_list = np.unique(seg_resized)
-        class_list = class_list[1:]
+        if dataset == "ade20k":
+            # 0 is the ignored background label, class k => embedding k - 1
+            class_ids = [int(k) - 1 for k in class_list if k != 0]
+        else:
+            class_ids = [int(k) for k in class_list if k < n_cls]
 
         if dataset == "ade20k":
             # Using reduce_zero_label==True => label 0 in segmentation
@@ -244,8 +275,10 @@ def visualize(model_path, image_path, output_dir, cmap_file,
             seg_gt[seg_gt == -1] = 255
     except Exception as e:
         print(e)
-        raise ValueError(f"Provided segmentation path {seg_input_path}"
-                         " is not a valid segmentation file.") from e
+        raise ValueError(
+            f"Provided segmentation path {seg_input_path}"
+            " is not a valid segmentation file."
+        ) from e
 
     # Make the image divisible by the patch size
     # NOTE: Process only square image?
@@ -267,7 +300,7 @@ def visualize(model_path, image_path, output_dir, cmap_file,
         )
 
     if not cls:
-        if x_patch > w_featmap or y_patch > h_featmap:
+        if x_patch >= w_featmap or y_patch >= h_featmap:
             raise ValueError(
                 f"Provided patch x: {x_patch} y: {y_patch} is not valid. "
                 " Patch should be in the range x:"
@@ -294,10 +327,15 @@ def visualize(model_path, image_path, output_dir, cmap_file,
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Get predicted segmentation map
-    pred_seg = inference(model, [img.to(ptu.device)],
-                         [{'flip': False}], (ori_height, ori_width),
-                         variant["inference_kwargs"]["window_size"],
-                         variant["inference_kwargs"]["window_stride"], 1)
+    pred_seg = inference(
+        model,
+        [img.to(ptu.device)],
+        [{"flip": False}],
+        (ori_height, ori_width),
+        variant["inference_kwargs"]["window_size"],
+        variant["inference_kwargs"]["window_stride"],
+        1,
+    )
     pred_seg = pred_seg.argmax(0).cpu()
 
     # Process input and extract attention maps
@@ -308,109 +346,99 @@ def visualize(model_path, image_path, output_dir, cmap_file,
         if cls:
             attentions = attentions[0, :, 0, num_extra_tokens:]
         else:
-            attentions = attentions[
-                0, :, num_patch + num_extra_tokens, num_extra_tokens:  # pylint: disable=E0606
-            ]
+            attentions = attentions[0, :, num_extra_tokens:, num_extra_tokens:]
     else:
         print(f"Generating Attention Mapping for Decoder Layer Id {layer_id}")
         attentions = model.get_attention_map_dec(img.to(ptu.device), layer_id)
-        print(attentions.shape)
         if cls:
             attentions = attentions[0, :, -n_cls:, :-n_cls]
         else:
-            attentions = attentions[0, :, num_patch, :-n_cls]
+            attentions = attentions[0, :, :-n_cls, :-n_cls]
 
     print("Attention map shape: ", attentions.shape)
 
-    # Copying the attention value of the merged tokens to all tokens that have
-    # been merged
+    # Map each original patch to the (possibly merged) token it belongs to.
+    # `source` has shape (1, n_merged_tokens, n_ori_tokens) and only covers the
+    # patch tokens, so its indices are in the same space as `attentions`, from
+    # which the [CLS]/[DIST] tokens (encoder) or the class embeddings (decoder)
+    # have already been removed.
     n_heads = attentions.shape[0]
     n_ori_tokens = h_featmap * w_featmap
-    if attentions.shape[1] != n_ori_tokens:
+    if attentions.shape[-1] != n_ori_tokens:
         idxs = model.encoder.info["source"][0].argmax(dim=0)
-        attentions_ = torch.ones(n_heads, n_ori_tokens,  # pylint: disable=E1101
-                                 device=attentions.device)
-        attentions_[:, :] = attentions[:, idxs]
-        print("Attention map shape after unmerging: ", attentions_.shape)
     else:
-        attentions_ = attentions
+        idxs = torch.arange(  # pylint: disable=E1101
+            n_ori_tokens, device=attentions.device
+        )
+
+    # Select the query row of the token the selected patch belongs to
+    if not cls:
+        attentions = attentions[:, idxs[num_patch]]  # pylint: disable=E0606
+
+    # Copying the attention value of the merged tokens to all tokens that have
+    # been merged (keys dimension)
+    attentions_ = attentions[..., idxs]
+    print("Attention map shape after unmerging: ", attentions_.shape)
 
     # Reshape into image shape
     if cls and not enc:
-        attentions = attentions_.reshape(n_heads, n_cls, w_featmap, h_featmap)
+        attentions = attentions_.reshape(n_heads, n_cls, h_featmap, w_featmap)
     else:
-        attentions = attentions_.reshape(n_heads, 1, w_featmap, h_featmap)
+        attentions = attentions_.reshape(n_heads, 1, h_featmap, w_featmap)
 
     # Resize attention maps to match input size
     attentions = (
-        F.interpolate(attentions, scale_factor=patch_size, mode="nearest")
-         .cpu().numpy()
+        F.interpolate(attentions, scale_factor=patch_size, mode="nearest").cpu().numpy()
     )
 
     # Save Attention map for each head
-    class_name = ['wall', 'building', 'sky', 'floor', 'tree', 'ceiling',
-                  'road', 'bed', 'windowpane', 'grass', 'cabinet', 'sidewalk',
-                  'person', 'earth', 'door', 'table', 'mountain', 'plant',
-                  'curtain', 'chair', 'car', 'water', 'painting', 'sofa',
-                  'shelf', 'house', 'sea', 'mirror', 'rug', 'field',
-                  'armchair', 'seat', 'fence', 'desk', 'rock', 'wardrobe',
-                  'lamp', 'bathtub', 'railing', 'cushion', 'base', 'box',
-                  'column', 'signboard', 'chest', 'counter', 'sand', 'sink',
-                  'skyscraper', 'fireplace', 'refrigerator', 'grandstand',
-                  'path', 'stairs', 'runway', 'case', 'pool', 'pillow',
-                  'screen', 'stairway', 'river', 'bridge', 'bookcase',
-                  'blind', 'coffee', 'toilet', 'flower', 'book', 'hill',
-                  'bench', 'countertop', 'stove', 'palm', 'kitchen',
-                  'computer', 'swivel', 'boat', 'bar', 'arcade', 'hovel',
-                  'bus', 'towel', 'light', 'truck', 'tower', 'chandelier',
-                  'awning', 'streetlight', 'booth', 'television', 'airplane',
-                  'dirt', 'apparel', 'pole', 'land', 'bannister', 'escalator',
-                  'ottoman', 'bottle', 'buffet', 'poster', 'stage', 'van',
-                  'ship', 'fountain', 'conveyer', 'canopy', 'washer',
-                  'plaything', 'swimming', 'stool', 'barrel', 'basket',
-                  'waterfall', 'tent', 'bag', 'minibike', 'cradle', 'oven',
-                  'ball', 'food', 'step', 'tank', 'trade', 'microwave', 'pot',
-                  'animal', 'bicycle', 'lake', 'dishwasher', 'screen',
-                  'blanket', 'sculpture', 'hood', 'sconce', 'vase', 'traffic',
-                  'tray', 'ashcan', 'fan', 'pier', 'crt', 'plate', 'monitor',
-                  'bulletin', 'shower', 'radiator', 'glass', 'clock', 'flag']
+    with open(cmap_file, "r", encoding="utf-8") as f:
+        data_config = yaml.full_load(f)
+    f.close()
+    class_names = dict(
+        zip(
+            list(map(lambda x: x["id"], data_config)),
+            list(map(lambda x: x["name"], data_config)),
+        )
+    )
 
     for i in range(n_heads):
         base_name = "enc" if enc else "dec"
         head_name = f"{base_name}_layer{layer_id}_attn-head{i}"
         attention_maps_list = attentions[i]
-        dir_path = output_dir / f"{base_name}_layer{layer_id}"
-        Path.mkdir(dir_path, exist_ok=True)
-        if enc:
+        layer_dir = output_dir / f"{base_name}_layer{layer_id}"
+        Path.mkdir(layer_dir, exist_ok=True)
+
+        if cls and not enc:
+            # One attention map per class embedding of the Mask Transformer,
+            # restricted to the classes present in the groundtruth
+            for j in class_ids:
+                cls_name = class_names[j]
+                dir_path = layer_dir / f"cls_{cls_name}"
+                Path.mkdir(dir_path, exist_ok=True)
+
+                save_attention_map(
+                    attention_maps_list[j],
+                    img_vis,
+                    dir_path,
+                    f"{head_name}_{cls_name}",
+                    cmap,
+                )
+        else:
             attention_map = attention_maps_list[0]
             if cls:
                 file_name = head_name + "_cls"
-                dir_path /= "cls"
-                Path.mkdir(dir_path, exist_ok=True)
+                dir_path = layer_dir / "cls"
             else:
-                dir_path /= f"patch_{x_patch}_{y_patch}"
-                Path.mkdir(dir_path, exist_ok=True)
+                file_name = head_name + f"_patch_{x_patch}_{y_patch}"
+                dir_path = layer_dir / f"patch_{x_patch}_{y_patch}"
+            Path.mkdir(dir_path, exist_ok=True)
 
-            save_attention_map(attention_map, img_vis, dir_path,
-                               file_name, cmap)  # pylint: disable=E0606
-        else:
-            for j in class_list:
-                attention_map = attention_maps_list[j-1]
-                if cls:
-                    file_name = file_name + f"_{class_name[j-1]}"
-                    dir_path /= f"cls_{class_name[j-1]}"
-                    Path.mkdir(dir_path, exist_ok=True)
-                else:
-                    dir_path /= f"patch_{x_patch}_{y_patch}"
-                    Path.mkdir(dir_path, exist_ok=True)
-
-                save_attention_map(attention_map, img_vis, dir_path,
-                                   file_name, cmap)  # pylint: disable=E0606
+            save_attention_map(attention_map, img_vis, dir_path, file_name, cmap)
 
     # Save input image showing selected patch
     if not cls:
-        im_n = torchvision.utils.make_grid(img, normalize=True,
-                                           scale_each=True)
+        im_n = torchvision.utils.make_grid(img, normalize=True, scale_each=True)
 
         # Compute corresponding X and Y px in the original image
         x_px = x_patch * patch_size
@@ -423,34 +451,33 @@ def visualize(model_path, image_path, output_dir, cmap_file,
         )
 
         # Draw pixels for selected patch
-        im_n[:, y_px:y_px + patch_size, x_px:x_px + patch_size] = px_v
+        im_n[:, y_px : y_px + patch_size, x_px : x_px + patch_size] = px_v
 
         torchvision.utils.save_image(
             im_n,
-            str(output_dir / image_name + ".png"),
+            str(output_dir / (image_name + f"_patch_{x_patch}_{y_patch}.png")),
         )
 
     # save the image with merged patches overlayed (2 different visualizations)
-    if patch_type == "graph" and layer_id + 1 >= selected_layer:
+    # NOTE: in the decoder, the sequence is always the reduced one, whatever
+    # the encoder layer G2TM has been applied to
+    if patch_type == "graph" and (not enc or layer_id + 1 >= selected_layer):
 
         source = model.encoder.info["source"]
         n_tokens_left = source.size(1)
         vis_out = g2tm.vis.make_visualization(img_vis, source, patch_size)
-        vis_path = (
-            output_dir /
-            (image_name + f"_vis_{n_tokens_left}_tokens.png")
-        )
+        vis_path = output_dir / (image_name + f"_vis_{n_tokens_left}_tokens.png")
         vis_out.save(vis_path)
         print(f"{vis_path} saved.")
 
-        vis_out = g2tm.vis.make_overlayed_visualization(img_vis, source,
-                                                        patch_size)
-        vis_path = (
-            output_dir /
-            (image_name + f"_vis_{n_tokens_left}_tokens_overlay.png")
-        )
-        vis_out.save(vis_path)
-        print(f"{vis_path} saved.")
+        # vis_out = g2tm.vis.make_overlayed_visualization(img_vis, source,
+        #                                                 patch_size)
+        # vis_path = (
+        #     output_dir /
+        #     (image_name + f"_vis_{n_tokens_left}_tokens_overlay.png")
+        # )
+        # vis_out.save(vis_path)
+        # print(f"{vis_path} saved.")
 
     # save the image with the original ViT patch grid
     else:
@@ -472,4 +499,4 @@ def visualize(model_path, image_path, output_dir, cmap_file,
 
 
 if __name__ == "__main__":
-    visualize()
+    visualize()  # pylint: disable=E1120

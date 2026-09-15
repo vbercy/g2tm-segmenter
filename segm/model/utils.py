@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Tool functions for Segmenter model."""
 
 import math
 
@@ -33,8 +33,7 @@ import segm.utils.torch as ptu
 
 
 def init_weights(m):
-    """ Randomly initialize weights for some layers.
-    """
+    """Randomly initialize weights for some layers."""
     if isinstance(m, nn.Linear):
         trunc_normal_(m.weight, std=0.02)
         if isinstance(m, nn.Linear) and m.bias is not None:
@@ -45,7 +44,7 @@ def init_weights(m):
 
 
 def resize_pos_embed(posemb, grid_old_shape, grid_new_shape, num_extra_tokens):
-    """ Rescale the grid of position embeddings when loading from state_dict.
+    """Rescale the grid of position embeddings when loading from state_dict.
     Adapted from
     https://github.com/google-research/vision_transformer/blob/00883dd691c63a6830751563748663526e811cee/vit_jax/checkpoint.py#L224
     """
@@ -60,13 +59,8 @@ def resize_pos_embed(posemb, grid_old_shape, grid_new_shape, num_extra_tokens):
         gs_old_h, gs_old_w = grid_old_shape
 
     gs_h, gs_w = grid_new_shape
-    posemb_grid = (
-        posemb_grid.reshape(1, gs_old_h, gs_old_w, -1)
-                   .permute(0, 3, 1, 2)
-    )
-    posemb_grid = F.interpolate(
-        posemb_grid, size=(gs_h, gs_w), mode="bilinear"
-    )
+    posemb_grid = posemb_grid.reshape(1, gs_old_h, gs_old_w, -1).permute(0, 3, 1, 2)
+    posemb_grid = F.interpolate(posemb_grid, size=(gs_h, gs_w), mode="bilinear")
     posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(1, gs_h * gs_w, -1)
     posemb = torch.cat([posemb_tok, posemb_grid], dim=1)  # pylint: disable=E1101
     return posemb
@@ -98,8 +92,7 @@ def checkpoint_filter_fn(state_dict, model):
 
 
 def padding(im, patch_size, fill_value=0):
-    """ Make the image sizes divisible by patch_size.
-    """
+    """Make the image sizes divisible by patch_size."""
     h, w = im.size(2), im.size(3)
     pad_h, pad_w = 0, 0
     if h % patch_size > 0:
@@ -108,13 +101,14 @@ def padding(im, patch_size, fill_value=0):
         pad_w = patch_size - (w % patch_size)
     im_padded = im
     if pad_h > 0 or pad_w > 0:
-        im_padded = F.pad(im, (0, pad_w, 0, pad_h), value=fill_value)  # pylint: disable=E1102
+        im_padded = F.pad(  # pylint: disable=E1102
+            im, (0, pad_w, 0, pad_h), value=fill_value
+        )
     return im_padded
 
 
 def unpadding(y, target_size):
-    """ Crop predictions on extra pixels coming from padding.
-    """
+    """Crop predictions on extra pixels coming from padding."""
     h, w = target_size
     h_pad, w_pad = y.size(2), y.size(3)
     extra_h = h_pad - h
@@ -127,8 +121,7 @@ def unpadding(y, target_size):
 
 
 def resize(im, smaller_size):
-    """ Resize image to a smaller size using bilinear interpolation.
-    """
+    """Resize image to a smaller size using bilinear interpolation."""
     h, w = im.shape[2:]
     if h < w:
         ratio = w / h
@@ -144,8 +137,7 @@ def resize(im, smaller_size):
 
 
 def sliding_window(im, flip, window_size, window_stride):
-    """ Slice the image into fixed-size windows for inference.
-    """
+    """Slice the image into fixed-size windows for inference."""
     _, _, h, w = im.shape
     ws = window_size
 
@@ -156,7 +148,7 @@ def sliding_window(im, flip, window_size, window_stride):
     w_anchors = [wa.item() for wa in w_anchors if wa < w - ws] + [w - ws]
     for ha in h_anchors:
         for wa in w_anchors:
-            window = im[:, :, ha:ha + ws, wa:wa + ws]
+            window = im[:, :, ha : ha + ws, wa : wa + ws]
             windows["crop"].append(window)
             windows["anchors"].append((ha, wa))
     windows["flip"] = flip
@@ -165,8 +157,7 @@ def sliding_window(im, flip, window_size, window_stride):
 
 
 def merge_windows(windows, window_size, ori_shape):
-    """ Merge predictions of all windows into a single segmentation map.
-    """
+    """Merge predictions of all windows into a single segmentation map."""
     ws = window_size
     im_windows = windows["seg_maps"]
     anchors = windows["anchors"]
@@ -177,8 +168,8 @@ def merge_windows(windows, window_size, ori_shape):
     logit = torch.zeros((c, h, w), device=im_windows.device)  # pylint: disable=E1101
     count = torch.zeros((1, h, w), device=im_windows.device)  # pylint: disable=E1101
     for window, (ha, wa) in zip(im_windows, anchors):
-        logit[:, ha:ha + ws, wa:wa + ws] += window
-        count[:, ha:ha + ws, wa:wa + ws] += 1
+        logit[:, ha : ha + ws, wa : wa + ws] += window
+        count[:, ha : ha + ws, wa : wa + ws] += 1
     logit = logit / count
     logit = F.interpolate(
         logit.unsqueeze(0),
@@ -200,10 +191,11 @@ def inference(
     window_stride,
     batch_size,
 ):
-    """ Run inference on several images.
-    """
+    """Run inference on several images."""
     c = model.n_cls
-    seg_map = torch.zeros((c, ori_shape[0], ori_shape[1]), device=ptu.device)  # pylint: disable=E1101
+    seg_map = torch.zeros(  # pylint: disable=E1101
+        (c, ori_shape[0], ori_shape[1]), device=ptu.device
+    )
     for im, im_metas in zip(ims, ims_metas):
         im = im.to(ptu.device)
         im = resize(im, window_size)
@@ -212,11 +204,12 @@ def inference(
         crops = torch.stack(windows.pop("crop"))[:, 0]  # pylint: disable=E1101
         b = len(crops)
         wb = batch_size
-        seg_maps = torch.zeros((b, c, window_size, window_size),  # pylint: disable=E1101
-                               device=im.device)
+        seg_maps = torch.zeros(  # pylint: disable=E1101
+            (b, c, window_size, window_size), device=im.device
+        )
         with torch.no_grad():
             for i in range(0, b, wb):
-                seg_maps[i:i + wb] = model.forward(crops[i:i + wb])
+                seg_maps[i : i + wb] = model.forward(crops[i : i + wb])
         windows["seg_maps"] = seg_maps
         im_seg_map = merge_windows(windows, window_size, ori_shape)
         seg_map += im_seg_map
@@ -225,9 +218,12 @@ def inference(
 
 
 def num_params(model):
-    """ Compute total number of parameters of all layers in the model.
-    """
+    """Compute total number of parameters of all layers in the model."""
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
-    n_params = sum([torch.prod(torch.tensor(p.size()))  # pylint: disable=E1101
-                    for p in model_parameters])
+    n_params = sum(
+        [
+            torch.prod(torch.tensor(p.size()))  # pylint: disable=E1101
+            for p in model_parameters
+        ]
+    )
     return n_params.item()

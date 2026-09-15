@@ -36,11 +36,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""PyTorch utility functions for GPU execution."""
 
+# pylint: disable=C0103,W0603
 
 import os
 import torch
-
 
 use_gpu = False
 gpu_id = 0
@@ -55,8 +56,7 @@ master_port = str(24900)
 
 
 def set_gpu_mode(mode):
-    """ GPU wrappers
-    """
+    """GPU wrappers"""
     global use_gpu
     global device
     global gpu_id

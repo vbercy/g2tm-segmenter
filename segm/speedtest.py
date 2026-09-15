@@ -20,7 +20,11 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 # --------------------------------------------------------
+"""
+Script to compute the throughput score of a model.
 
+Example: see README.md
+"""
 
 import time
 import os
@@ -39,13 +43,13 @@ from segm.data.utils import STATS
 
 import g2tm
 
-
 warnings.filterwarnings("ignore")
 
 
 @torch.no_grad()
-def compute_throughput(model: nn.Module, validation_loader: DataLoader,
-                       batch_size: int, device: str) -> float:
+def compute_throughput(
+    model: nn.Module, validation_loader: DataLoader, batch_size: int, device: str
+) -> float:
     """Average throughput score of the model for one forward-pass.
 
     This function computes the average throughput score (frame-per-second,
@@ -93,7 +97,7 @@ def compute_throughput(model: nn.Module, validation_loader: DataLoader,
 
     timing = torch.as_tensor(timing, dtype=torch.float32)  # pylint: disable=E1101
 
-    return round((batch_size*repeat / timing.mean()).item(), 2)
+    return round((batch_size * repeat / timing.mean()).item(), 2)
 
 
 @click.command()
@@ -105,8 +109,16 @@ def compute_throughput(model: nn.Module, validation_loader: DataLoader,
 @click.option("--threshold", default=0.88, type=float)
 @click.option("--prop-attn/--no-prop-attn", default=False, is_flag=True)
 @click.option("--iprop-attn/--no-iprop-attn", default=False, is_flag=True)
-def main(model_path, dataset_name, batch_size, patch_type,
-         selected_layer, threshold, prop_attn, iprop_attn):
+def main(
+    model_path,
+    dataset_name,
+    batch_size,
+    patch_type,
+    selected_layer,
+    threshold,
+    prop_attn,
+    iprop_attn,
+):
     """Compute the throughput score of the model.
 
     Args:
@@ -120,30 +132,31 @@ def main(model_path, dataset_name, batch_size, patch_type,
         iprop_attn (bool): Whether to apply Inverse Proportional Attention.
     """
 
-    device = 'cuda:0'
+    device = "cuda:0"
 
-    root_dir = os.getenv('DATASET')
-    dataset_path, dataset_txt_path = get_dataset_inference_path(dataset_name,
-                                                                root_dir)
+    root_dir = os.getenv("DATASET")
+    dataset_path, dataset_txt_path = get_dataset_inference_path(dataset_name, root_dir)
 
     model, variant = load_model(model_path)
-    input_size = variant['dataset_kwargs']['crop_size']
+    input_size = variant["dataset_kwargs"]["crop_size"]
     normalization = variant["dataset_kwargs"]["normalization"]
     stats = STATS[normalization]
 
     if patch_type == "graph":
-        g2tm.graph_segmenter_patch(model, selected_layer, threshold,
-                                   prop_attn, iprop_attn)
+        g2tm.graph_segmenter_patch(
+            model, selected_layer, threshold, prop_attn, iprop_attn
+        )
 
     model.eval()
     model.to(device)
 
-    validation_loader = dataset_prepare(dataset_path, dataset_txt_path, stats,
-                                        batch_size, input_size)
+    validation_loader = dataset_prepare(
+        dataset_path, dataset_txt_path, stats, batch_size, input_size
+    )
     fps = compute_throughput(model, validation_loader, batch_size, device)
 
-    print('FPS:', fps, flush=True)
+    print("FPS:", fps, flush=True)
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

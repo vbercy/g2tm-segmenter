@@ -36,7 +36,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Distributed training utility functions."""
 
 from pathlib import Path
 import builtins as __builtin__
@@ -48,10 +48,12 @@ import segm.utils.torch as ptu
 
 
 def init_process(backend="nccl"):
-    """ Init CUDA process group.
-    """
-    print(f"Starting process with rank {ptu.dist_rank} ({ptu.master_addr}:"
-          f"{ptu.master_port})...", flush=True)
+    """Init CUDA process group."""
+    print(
+        f"Starting process with rank {ptu.dist_rank} ({ptu.master_addr}:"
+        f"{ptu.master_port})...",
+        flush=True,
+    )
 
     torch.cuda.set_device(ptu.dist_rank)
 
@@ -68,11 +70,10 @@ def init_process(backend="nccl"):
 
 
 def silence_print(is_master):
-    """ This function disables printing when not in master process
-    """
+    """This function disables printing when not in master process"""
     builtin_print = __builtin__.print
 
-    def print(*args, **kwargs):
+    def print(*args, **kwargs):  # pylint: disable=W0622
         force = kwargs.pop("force", False)
         if is_master or force:
             builtin_print(*args, **kwargs)
@@ -81,7 +82,7 @@ def silence_print(is_master):
 
 
 def sync_model(sync_dir, model):
-    """ Sync model accross ranks.
+    """Sync model accross ranks.
     https://github.com/ylabbe/cosypose/blob/master/cosypose/utils/distributed.py
     """
     sync_path = Path(sync_dir).resolve() / "sync_model.pkl"
@@ -97,12 +98,10 @@ def sync_model(sync_dir, model):
 
 
 def barrier():
-    """ Redefining torch.distributed.barrier() function.
-    """
+    """Redefining torch.distributed.barrier() function."""
     dist.barrier()
 
 
 def destroy_process():
-    """ Redefining torch.distributed.destroy_process_group() function.
-    """
+    """Redefining torch.distributed.destroy_process_group() function."""
     dist.destroy_process_group()

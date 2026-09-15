@@ -20,7 +20,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""
+Pascal Context dataset preparation script.
 
+Example:
+    $ python prepare_pcontext.py /path/to/download/dir
+"""
 
 from pathlib import Path
 import shutil
@@ -35,8 +40,7 @@ from segm.utils.download import download
 
 
 def download_pcontext(path, overwrite=False):
-    """Download PASCAL Context dataset.
-    """
+    """Download PASCAL Context dataset."""
     _aug_download_urls = [
         (
             "https://www.dropbox.com/s/wtdibo9lb2fur70/VOCtrainval_03-May-2010.tar?dl=1",
@@ -84,16 +88,14 @@ def download_pcontext(path, overwrite=False):
 @click.command(help="Initialize PASCAL Context dataset.")
 @click.argument("download_dir", type=str)
 def main(download_dir):
-    """Prepare PASCAL Context dataset.
-    """
+    """Prepare PASCAL Context dataset."""
     dataset_dir = Path(download_dir) / "pcontext"
 
     download_pcontext(dataset_dir, overwrite=False)
 
     devkit_path = dataset_dir / "VOCdevkit"
     out_dir = devkit_path / "VOC2010" / "SegmentationClassContext"
-    imageset_dir = (devkit_path / "VOC2010" /
-                    "ImageSets" / "SegmentationContext")
+    imageset_dir = devkit_path / "VOC2010" / "ImageSets" / "SegmentationContext"
 
     out_dir.mkdir(parents=True, exist_ok=True)
     imageset_dir.mkdir(parents=True, exist_ok=True)
@@ -111,7 +113,7 @@ def main(download_dir):
         label_path = out_dir / f"{new_idx}.png"
         label.save(str(label_path))
 
-    with open(str(imageset_dir / "train.txt"), "w", encoding='utf-8') as f:
+    with open(str(imageset_dir / "train.txt"), "w", encoding="utf-8") as f:
         f.writelines(line + "\n" for line in sorted(train_list))
 
     val_dict = torch.load(str(val_torch_path))
@@ -124,9 +126,9 @@ def main(download_dir):
         label_path = out_dir / f"{new_idx}.png"
         label.save(str(label_path))
 
-    with open(str(imageset_dir / "val.txt"), "w", encoding='utf-8') as f:
+    with open(str(imageset_dir / "val.txt"), "w", encoding="utf-8") as f:
         f.writelines(line + "\n" for line in sorted(val_list))
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

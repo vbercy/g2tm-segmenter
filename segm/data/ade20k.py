@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""ADE20K dataset wrapper class."""
 
 from pathlib import Path
 
@@ -28,14 +28,13 @@ from segm.data.base import BaseMMSeg
 from segm.data import utils
 from segm.config import dataset_dir
 
-
 ADE20K_CONFIG_PATH = Path(__file__).parent / "config" / "ade20k.py"
 ADE20K_CATS_PATH = Path(__file__).parent / "config" / "ade20k.yml"
 
 
 class ADE20KSegmentation(BaseMMSeg):
-    """ ADE20K dataset class.
-    """
+    """ADE20K dataset class."""
+
     def __init__(self, image_size, crop_size, split, **kwargs):
         super().__init__(
             image_size,
@@ -44,9 +43,7 @@ class ADE20KSegmentation(BaseMMSeg):
             ADE20K_CONFIG_PATH,
             **kwargs,
         )
-        self.names, self.colors = utils.dataset_cat_description(
-            ADE20K_CATS_PATH
-        )
+        self.names, self.colors = utils.dataset_cat_description(ADE20K_CATS_PATH)
         self.n_cls = 150
         self.ignore_label = 0
         self.reduce_zero_label = True
@@ -69,6 +66,5 @@ class ADE20KSegmentation(BaseMMSeg):
         return config
 
     def test_post_process(self, labels):
-        """ Test post-processing.
-        """
+        """Test post-processing."""
         return labels + 1

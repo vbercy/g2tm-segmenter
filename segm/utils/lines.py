@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Plotting utility functions."""
 
 from itertools import cycle
 
@@ -28,8 +28,8 @@ import numpy as np
 
 
 class Lines:
-    """ Plot line.
-    """
+    """Plot line."""
+
     def __init__(self, resolution=20, smooth=None):
         self.colors = cycle(
             [
@@ -44,7 +44,7 @@ class Lines:
             ]
         )
         self.markers = cycle("os^Dp>d<")
-        self.legend = {"fontsize": 'medium', "labelspacing": 0, "numpoints": 1}
+        self.legend = {"fontsize": "medium", "labelspacing": 0, "numpoints": 1}
         self._resolution = resolution
         self._smooth_weight = smooth
 
@@ -69,8 +69,7 @@ class Lines:
         return clrs
 
     def _plot_legend(self, ax, lines, labels):
-        # scores = {label: -np.nanmedian(line) for label,
-        #           line in zip(labels, lines)}
+        _scores = {label: -np.nanmedian(line) for label, line in zip(labels, lines)}
         handles, labels = ax.get_legend_handles_labels()
         # handles, labels = zip(*sorted(
         #     zip(handles, labels), key=lambda x: scores[x[1]]))
@@ -84,7 +83,7 @@ class Lines:
         weight in [0, 1]
         exponential moving average, same as tensorboard
         """
-        assert weight >= 0 and weight <= 1
+        assert 0 <= weight <= 1
         last = scalars[0]
         smoothed = np.asarray(scalars)
         for i, point in enumerate(scalars):

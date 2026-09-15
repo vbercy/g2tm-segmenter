@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Configuration utility functions."""
 
 import os
 from pathlib import Path
@@ -29,26 +29,22 @@ import yaml
 
 
 def load_config():
-    """ Load YAML configuration file containing model parameters.
-    """
+    """Load YAML configuration file containing model parameters."""
     return yaml.load(
-        open(Path(__file__).parent / "config.yml", "r", encoding='utf-8'),
-        Loader=yaml.FullLoader
+        open(Path(__file__).parent / "config.yml", "r", encoding="utf-8"),
+        Loader=yaml.FullLoader,
     )
 
 
 def check_os_environ(key, use):
-    """ Check if variable is defined as an environment variable.
-    """
+    """Check if variable is defined as an environment variable."""
     if key not in os.environ:
         raise ValueError(
-            f"{key} is not defined in the os variables, it is required"
-            f"for {use}."
+            f"{key} is not defined in the os variables, it is required" f"for {use}."
         )
 
 
 def dataset_dir():
-    """ Check if DATASET is defined as an environment variable.
-    """
+    """Check if DATASET is defined as an environment variable."""
     check_os_environ("DATASET", "data loading")
     return os.environ["DATASET"]

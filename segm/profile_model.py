@@ -11,7 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Script to profile model activity during inference on CPU and GPU using PyTorch profiler.
 
+Example: Profile a model with G2TM@2[0.88]
+    $ python ./segm/profile_model.py <ckpt_file> <dataset_name> --patch-type graph
+      --selected-layer 2 --threshold 0.88
+"""
 
 import os
 from pathlib import Path
@@ -30,13 +36,13 @@ from segm.data.utils import STATS
 
 import g2tm
 
-
 warnings.filterwarnings("ignore")
 
 
 @torch.no_grad()
-def profile_model(model: nn.Module, validation_loader: DataLoader,
-                  device: str | torch.device) -> profile:
+def profile_model(
+    model: nn.Module, validation_loader: DataLoader, device: str | torch.device
+) -> profile:
     """Profile PyTorch model activity on CPU and GPU.
 
     This function profiles the activity of a model during inference,
@@ -65,14 +71,15 @@ def profile_model(model: nn.Module, validation_loader: DataLoader,
 
             # profiling iteration
             elif i == 3:
-                with (profile(activities=activities, record_shapes=True)
-                      as prof):
+                with profile(activities=activities, record_shapes=True) as prof:
                     with record_function("model_inference"):
                         model(image.to(device))
 
-                n_tokens = (model.encoder.info["source"].size(1)
-                            if model.token_reduction
-                            else model.encoder.patch_embed.num_patches)
+                n_tokens = (
+                    model.encoder.info["source"].size(1)
+                    if model.token_reduction
+                    else model.encoder.patch_embed.num_patches
+                )
                 print(f"Number of tokens after reduction: {n_tokens}.")
                 break
 
@@ -83,13 +90,19 @@ def profile_model(model: nn.Module, validation_loader: DataLoader,
 @click.argument("model_path", type=str)
 @click.argument("dataset_name", type=str)
 @click.option("--patch-type", default="pure", type=str)
-@click.option("--selected-layer", default=1, type=int)
+@click.option("--selected-layer", default=2, type=int)
 @click.option("--threshold", default=0.88, type=float)
 @click.option("--prop-attn/--no-prop-attn", default=False, is_flag=True)
 @click.option("--iprop-attn/--no-iprop-attn", default=False, is_flag=True)
-def main(model_path: str, dataset_name: str, patch_type: str,
-         selected_layer: int, threshold: float, prop_attn: bool,
-         iprop_attn: bool):
+def main(
+    model_path: str,
+    dataset_name: str,
+    patch_type: str,
+    selected_layer: int,
+    threshold: float,
+    prop_attn: bool,
+    iprop_attn: bool,
+):
     """Profiles model activity during inference on CPU and GPU.
 
     Args:
@@ -102,36 +115,35 @@ def main(model_path: str, dataset_name: str, patch_type: str,
         iprop_attn (bool): Whether to apply Inverse Proportional Attention.
     """
 
-    device = 'cuda:0'
+    device = "cuda:0"
 
     batch_size = 1
-    root_dir = os.getenv('DATASET')
-    dataset_path, dataset_txt_path = get_dataset_inference_path(dataset_name,
-                                                                root_dir)
+    root_dir = os.getenv("DATASET")
+    dataset_path, dataset_txt_path = get_dataset_inference_path(dataset_name, root_dir)
 
     model, variant = load_model(model_path)
-    input_size = variant['dataset_kwargs']['crop_size']
+    input_size = variant["dataset_kwargs"]["crop_size"]
     normalization = variant["dataset_kwargs"]["normalization"]
     stats = STATS[normalization]
 
     if patch_type == "graph":
-        g2tm.graph_segmenter_patch(model, selected_layer, threshold,
-                                   prop_attn, iprop_attn)
+        g2tm.graph_segmenter_patch(
+            model, selected_layer, threshold, prop_attn, iprop_attn
+        )
 
     model.eval()
     model.to(device)
 
-    validation_loader = dataset_prepare(dataset_path, dataset_txt_path, stats,
-                                        batch_size, input_size, False)
+    validation_loader = dataset_prepare(
+        dataset_path, dataset_txt_path, stats, batch_size, input_size, False
+    )
     prof = profile_model(model, validation_loader, device)
 
     save_folder = Path(model_path).parent
     prof.export_chrome_trace(str(save_folder / "trace.json"))
-    print(prof.key_averages().table(sort_by='self_cuda_time_total',
-                                    row_limit=10))
-    print(prof.key_averages().table(sort_by='self_cpu_time_total',
-                                    row_limit=10))
+    print(prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=10))
+    print(prof.key_averages().table(sort_by="self_cpu_time_total", row_limit=10))
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

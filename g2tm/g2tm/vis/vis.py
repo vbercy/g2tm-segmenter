@@ -20,7 +20,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 # --------------------------------------------------------
-
+"""Utility functions to visualize G2TM token fusion."""
 
 import random
 from typing import List, Tuple
@@ -35,8 +35,7 @@ import torch
 import torch.nn.functional as F
 
 
-def generate_colormap(n: int,
-                      seed: int = 0) -> List[Tuple[float, float, float]]:
+def generate_colormap(n: int, seed: int = 0) -> List[Tuple[float, float, float]]:
     """Generates a colormap with N floating-point elements.
 
     Args:
@@ -49,9 +48,7 @@ def generate_colormap(n: int,
     random.seed(seed)
 
     def generate_color():
-        return (random.random(),
-                random.random(),
-                random.random())
+        return (random.random(), random.random(), random.random())
 
     return [generate_color() for _ in range(n)]
 
@@ -69,15 +66,14 @@ def generate_colormap_int(n: int, seed: int = 0) -> List[Tuple[int, int, int]]:
     random.seed(seed)
 
     def generate_color():
-        return (random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255))
+        return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
     return [generate_color() for _ in range(n)]
 
 
-def make_visualization(img: Image.Image, source: torch.Tensor,
-                       patch_size: int = 16) -> Image.Image:
+def make_visualization(
+    img: Image.Image, source: torch.Tensor, patch_size: int = 16
+) -> Image.Image:
     """Overlay of the fused patches on the original image.
 
     This function creates a visualization of the fused patches on top of the
@@ -108,7 +104,7 @@ def make_visualization(img: Image.Image, source: torch.Tensor,
     cmap = generate_colormap(num_groups)
     vis_img = 0
 
-    for i in range(1, num_groups):
+    for i in range(num_groups):
         mask = (vis == i).float().view(1, 1, ph, pw)
         mask = F.interpolate(mask, size=(h, w), mode="nearest")
         mask = mask.view(h, w, 1).numpy()
@@ -121,7 +117,7 @@ def make_visualization(img: Image.Image, source: torch.Tensor,
             color = np.zeros(3)
 
         vis_img = vis_img + mask_eroded * color.reshape(1, 1, 3)
-        vis_img = vis_img + mask_edge * np.array(cmap[i]).reshape(1, 1, 3)  # pylint: disable=E1121
+        vis_img = vis_img + mask_edge * np.asarray(cmap[i]).reshape((1, 1, 3))
 
     # Convert back into a PIL image
     vis_img = Image.fromarray(np.uint8(vis_img * 255))
@@ -129,8 +125,9 @@ def make_visualization(img: Image.Image, source: torch.Tensor,
     return vis_img
 
 
-def make_overlayed_visualization(img: Image.Image, source: torch.Tensor,
-                                 patch_size: int = 16) -> Image.Image:
+def make_overlayed_visualization(
+    img: Image.Image, source: torch.Tensor, patch_size: int = 16
+) -> Image.Image:
     """Overlay of the fused patches on the original image.
 
     This function creates a variant of the visualization of the fused patches.
@@ -156,7 +153,7 @@ def make_overlayed_visualization(img: Image.Image, source: torch.Tensor,
     draw = ImageDraw.Draw(overlay)
     cmap = generate_colormap_int(num_groups)
 
-    for i in range(1, num_groups):
+    for i in range(num_groups):
         color_rgb = cmap[i]
         color = (*color_rgb, 0)
         border_color = (0, 0, 255, 180)
@@ -168,9 +165,7 @@ def make_overlayed_visualization(img: Image.Image, source: torch.Tensor,
             row, col = divmod(idx.item(), n_w)
             left = col * patch_size
             top = row * patch_size
-            draw.rectangle(
-                [left, top, left + patch_size, top + patch_size], fill=color
-            )
+            draw.rectangle([left, top, left + patch_size, top + patch_size], fill=color)
             mask[row, col] = 255
 
         mask_img = Image.fromarray(mask).resize((w, h), resample=Image.NEAREST)
@@ -183,8 +178,7 @@ def make_overlayed_visualization(img: Image.Image, source: torch.Tensor,
             contour = contour.squeeze()
             if len(contour.shape) == 2 and len(contour) >= 2:
                 draw.line(
-                    contour.tolist() + [contour.tolist()[0]],
-                    fill=border_color, width=1
+                    contour.tolist() + [contour.tolist()[0]], fill=border_color, width=1
                 )
 
     blended = Image.alpha_composite(img.convert("RGBA"), overlay)
@@ -211,13 +205,13 @@ def make_seg_visualization(seg: torch.Tensor, cmap_file: str) -> Image:
     vis_seg = torch.zeros((h, w, 3), dtype=int)  # pylint: disable=E1101
 
     classes = torch.unique(seg).tolist()
-    with open(cmap_file, 'r', encoding='utf-8') as f:
+    with open(cmap_file, "r", encoding="utf-8") as f:
         data_config = yaml.full_load(f)
     f.close()
     cmap = dict(
         zip(
-            list(map(lambda x: x['id'], data_config)),
-            list(map(lambda x: x['color'], data_config))
+            list(map(lambda x: x["id"], data_config)),
+            list(map(lambda x: x["color"], data_config)),
         )
     )
     cmap[255] = [0, 0, 0]
@@ -232,10 +226,13 @@ def make_seg_visualization(seg: torch.Tensor, cmap_file: str) -> Image:
     return vis_seg
 
 
-def add_grid(image: Image.Image, grid_size: int = 16,
-             grid_color: tuple = (128, 128, 128),
-             thickness: int = 1) -> Image.Image:
-    """ Overlay of the original ViT patches on the image.
+def add_grid(
+    image: Image.Image,
+    grid_size: int = 16,
+    grid_color: tuple = (128, 128, 128),
+    thickness: int = 1,
+) -> Image.Image:
+    """Overlay of the original ViT patches on the image.
 
     This function adds a regular grid of the specified size to the input image.
 

@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Tool functions for datasets."""
 
 import yaml
 
@@ -35,9 +35,10 @@ STATS = {
 
 
 def seg_to_rgb(seg, colors):
-    """ From segmentation labels to RGB colors.
-    """
-    im = torch.zeros((seg.shape[0], seg.shape[1], seg.shape[2], 3)).float()  # pylint: disable=E1101
+    """From segmentation labels to RGB colors."""
+    im = torch.zeros(  # pylint: disable=E1101
+        (seg.shape[0], seg.shape[1], seg.shape[2], 3)
+    ).float()
     cls = torch.unique(seg)
     for cl in cls:
         color = colors[int(cl)]
@@ -48,19 +49,24 @@ def seg_to_rgb(seg, colors):
 
 
 def dataset_cat_description(path, cmap=None):
-    """ Get names and colors associated to each label.
-    """
-    with open(path, "r", encoding='utf-8') as f:
+    """Get names and colors associated to each label."""
+    with open(path, "r", encoding="utf-8") as f:
         desc = yaml.load(f, Loader=yaml.FullLoader)
     colors = {}
     names = []
     for cat in desc:
         names.append(cat["name"])
         if "color" in cat:
-            colors[cat["id"]] = torch.tensor(cat["color"]).float() / 255  # pylint: disable=E1101
+            colors[cat["id"]] = (
+                torch.tensor(cat["color"]).float() / 255  # pylint: disable=E1101
+            )
         else:
-            colors[cat["id"]] = torch.tensor(cmap[cat["id"]]).float()  # pylint: disable=E1101
-    colors[IGNORE_LABEL] = torch.tensor([0.0, 0.0, 0.0]).float()  # pylint: disable=E1101
+            colors[cat["id"]] = torch.tensor(  # pylint: disable=E1101
+                cmap[cat["id"]]
+            ).float()
+    colors[IGNORE_LABEL] = torch.tensor(  # pylint: disable=E1101
+        [0.0, 0.0, 0.0]
+    ).float()
     return names, colors
 
 

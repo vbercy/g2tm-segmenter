@@ -20,15 +20,15 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Data loader class for datasets."""
 
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 
 class Loader(DataLoader):
-    """ Dataloader class.
-    """
+    """Dataloader class."""
+
     def __init__(self, dataset, batch_size, num_workers, distributed, split):
         if distributed:
             sampler = DistributedSampler(dataset, shuffle=True)
@@ -53,27 +53,22 @@ class Loader(DataLoader):
 
     @property
     def unwrapped(self):
-        """ Unwrap.
-        """
+        """Unwrap."""
         return self.base_dataset.unwrapped
 
     def set_epoch(self, epoch):
-        """ Set sampler epoch.
-        """
+        """Set sampler epoch."""
         if isinstance(self.sampler, DistributedSampler):
             self.sampler.set_epoch(epoch)
 
     def get_diagnostics(self, logger):
-        """ Get diagnostics from logger.
-        """
+        """Get diagnostics from logger."""
         return self.base_dataset.get_diagnostics(logger)
 
     def get_snapshot(self):
-        """ Get snapshot.
-        """
+        """Get snapshot."""
         return self.base_dataset.get_snapshot()
 
     def end_epoch(self, epoch):
-        """ Get end epoch.
-        """
+        """Get end epoch."""
         return self.base_dataset.end_epoch(epoch)

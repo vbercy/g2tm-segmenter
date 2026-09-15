@@ -36,7 +36,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Tool functions to create Segmenter models."""
 
 import os
 from pathlib import Path
@@ -64,13 +64,18 @@ def vit_base_patch8_384(pretrained=False, **kwargs):
     ImageNet-1k weights fine-tuned from in21k @ 384x384,
     source https://github.com/google-research/vision_transformer.
     """
-    model_kwargs = {"patch_size": 8, "embed_dim": 768, "depth": 12,
-                    "num_heads": 12, **kwargs}
+    model_kwargs = {
+        "patch_size": 8,
+        "embed_dim": 768,
+        "depth": 12,
+        "num_heads": 12,
+        **kwargs,
+    }
     model = _create_vision_transformer(
         "vit_base_patch8_384",
         pretrained=pretrained,
         default_cfg={
-            "url": '',
+            "url": "",
             "input_size": (3, 384, 384),
             "mean": (0.5, 0.5, 0.5),
             "std": (0.5, 0.5, 0.5),
@@ -82,8 +87,7 @@ def vit_base_patch8_384(pretrained=False, **kwargs):
 
 
 def create_vit(model_cfg):
-    """ Instanciate ViT backbone.
-    """
+    """Instanciate ViT backbone."""
     model_cfg = model_cfg.copy()
     backbone = model_cfg.pop("backbone")
 
@@ -92,13 +96,16 @@ def create_vit(model_cfg):
     mlp_expansion_ratio = 4
     model_cfg["d_ff"] = mlp_expansion_ratio * model_cfg["d_model"]
 
-    default_cfg = default_cfgs.get(backbone,
-                                   {"pretrained": False,
-                                    "num_classes": 1000,
-                                    "drop_rate": 0.0,
-                                    "drop_path_rate": 0.0,
-                                    "drop_block_rate": None}
-    ).copy()
+    default_cfg = default_cfgs.get(
+        backbone,
+        {
+            "pretrained": False,
+            "num_classes": 1000,
+            "drop_rate": 0.0,
+            "drop_path_rate": 0.0,
+            "drop_block_rate": None,
+        },
+    )
 
     default_cfg["input_size"] = (
         3,
@@ -107,8 +114,7 @@ def create_vit(model_cfg):
     )
     model = VisionTransformer(**model_cfg)
     if backbone == "vit_base_patch8_384":
-        path = os.path.expandvars("$TORCH_HOME/hub/checkpoints/"
-                                  "vit_base_patch8_384.pth")
+        path = os.path.expandvars("$TORCH_HOME/hub/checkpoints/vit_base_patch8_384.pth")
         state_dict = torch.load(path, map_location="cpu")
         filtered_dict = checkpoint_filter_fn(state_dict, model)
         model.load_state_dict(filtered_dict, strict=True)
@@ -121,8 +127,7 @@ def create_vit(model_cfg):
 
 
 def create_decoder(encoder, decoder_cfg):
-    """ Instanciate decoder.
-    """
+    """Instanciate decoder."""
     decoder_cfg = decoder_cfg.copy()
     name = decoder_cfg.pop("name")
     decoder_cfg["d_encoder"] = encoder.d_model
@@ -143,8 +148,7 @@ def create_decoder(encoder, decoder_cfg):
 
 
 def create_segmenter(model_cfg):
-    """ Instanciate whole Segmenter model.
-    """
+    """Instanciate whole Segmenter model."""
     model_cfg = model_cfg.copy()
     decoder_cfg = model_cfg.pop("decoder")
     decoder_cfg["n_cls"] = model_cfg["n_cls"]
@@ -157,11 +161,11 @@ def create_segmenter(model_cfg):
 
 
 def load_model(model_path):
-    """ Instanciate the model according to the configuration file and load a 
+    """Instanciate the model according to the configuration file and load a
     checkpoint into the model.
     """
     variant_path = Path(model_path).parent / "variant.yml"
-    with open(variant_path, "r", encoding='utf-8') as f:
+    with open(variant_path, "r", encoding="utf-8") as f:
         variant = yaml.load(f, Loader=yaml.FullLoader)
     net_kwargs = variant["net_kwargs"]
 

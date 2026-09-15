@@ -22,7 +22,7 @@
 # SOFTWARE.
 
 # Adapted from 2020 Ross Wightman (https://github.com/rwightman/pytorch-image-models)
-
+"""Vision Transformer PyTorch class, as Segmenter's encoder."""
 
 import torch
 from torch import nn
@@ -34,17 +34,15 @@ from segm.model.blocks import Block
 
 
 class PatchEmbedding(nn.Module):
-    """ Patch Embedding layer (i.e. : Conv2D layer)
-    """
+    """Patch Embedding layer (i.e. : Conv2D layer)"""
+
     def __init__(self, image_size, patch_size, embed_dim, channels):
         super().__init__()
 
         self.image_size = image_size
         if image_size[0] % patch_size != 0 or image_size[1] % patch_size != 0:
-            raise ValueError("image dimensions must be divisible by the patch"
-                             " size")
-        self.grid_size = (image_size[0] // patch_size,
-                          image_size[1] // patch_size)
+            raise ValueError("image dimensions must be divisible by the patch size")
+        self.grid_size = (image_size[0] // patch_size, image_size[1] // patch_size)
         self.num_patches = self.grid_size[0] * self.grid_size[1]
         self.patch_size = patch_size
 
@@ -53,16 +51,15 @@ class PatchEmbedding(nn.Module):
         )
 
     def forward(self, im):
-        """ Forward function.
-        """
+        """Forward function."""
         # B, C, H, W = im.shape
         x = self.proj(im).flatten(2).transpose(1, 2)
         return x
 
 
 class VisionTransformer(nn.Module):
-    """ ViT backbone.
-    """
+    """ViT backbone."""
+
     def __init__(
         self,
         image_size,
@@ -93,24 +90,32 @@ class VisionTransformer(nn.Module):
         self.n_cls = n_cls
 
         # cls and pos tokens
-        self.cls_token = nn.Parameter(torch.zeros(1, 1, d_model))  # pylint: disable=E1101
+        self.cls_token = nn.Parameter(
+            torch.zeros(1, 1, d_model)  # pylint: disable=E1101
+        )
         self.distilled = distilled
         if self.distilled:
-            self.dist_token = nn.Parameter(torch.zeros(1, 1, d_model))  # pylint: disable=E1101
+            self.dist_token = nn.Parameter(
+                torch.zeros(1, 1, d_model)  # pylint: disable=E1101
+            )
             self.pos_embed = nn.Parameter(
-                torch.randn(1, self.patch_embed.num_patches + 2, d_model)  # pylint: disable=E1101
+                torch.randn(  # pylint: disable=E1101
+                    1, self.patch_embed.num_patches + 2, d_model
+                )
             )
             self.head_dist = nn.Linear(d_model, n_cls)
         else:
             self.pos_embed = nn.Parameter(
-                torch.randn(1, self.patch_embed.num_patches + 1, d_model)  # pylint: disable=E1101
+                torch.randn(  # pylint: disable=E1101
+                    1, self.patch_embed.num_patches + 1, d_model
+                )
             )
 
         # transformer blocks
-        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, n_layers)]  # pylint: disable=E1101
+        dp_rates = torch.linspace(0, drop_path_rate, n_layers)  # pylint: disable=E1101
+        dpr = [x.item() for x in dp_rates]
         self.blocks = nn.ModuleList(
-            [Block(d_model, n_heads, d_ff, dropout, dpr[i])
-             for i in range(n_layers)]
+            [Block(d_model, n_heads, d_ff, dropout, dpr[i]) for i in range(n_layers)]
         )
 
         # output head
@@ -127,19 +132,16 @@ class VisionTransformer(nn.Module):
 
     @torch.jit.ignore
     def no_weight_decay(self):
-        """ Modules with no weight decay.
-        """
+        """Modules with no weight decay."""
         return {"pos_embed", "cls_token", "dist_token"}
 
     @torch.jit.ignore()
     def load_pretrained(self, checkpoint_path, prefix=""):
-        """ Load pretrained weights.
-        """
+        """Load pretrained weights."""
         _load_weights(self, checkpoint_path, prefix)
 
     def forward(self, im, return_features=False):
-        """ Forward function.
-        """
+        """Forward function."""
         b, _, h, w = im.shape
         ps = self.patch_size
 
@@ -181,8 +183,7 @@ class VisionTransformer(nn.Module):
         return x
 
     def get_attention_map(self, im, layer_id):
-        """ Get attention maps from a specified layer.
-        """
+        """Get attention maps from a specified layer."""
         if layer_id >= self.n_layers or layer_id < 0:
             raise ValueError(
                 f"Provided layer_id: {layer_id} is not valid. 0 <= {layer_id}"

@@ -36,7 +36,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Optimizer and scheduler instantiation functions."""
 
 from timm import scheduler
 from timm import optim
@@ -45,8 +45,7 @@ from segm.optim.scheduler import PolynomialLR
 
 
 def create_scheduler(opt_args, optimizer):
-    """ Instanciate scheduler.
-    """
+    """Instanciate scheduler."""
     if opt_args.sched == "polynomial":
         lr_scheduler = PolynomialLR(
             optimizer=optimizer,
@@ -63,6 +62,5 @@ def create_scheduler(opt_args, optimizer):
 
 
 def create_optimizer(opt_args, model):
-    """ Instanciate optimizer.
-    """
+    """Instanciate optimizer."""
     return optim.create_optimizer(opt_args, model)

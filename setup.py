@@ -36,33 +36,32 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Setup script for the segm package."""
 
 from setuptools import setup
 
 
 def get_version():
-    """ Returns the segm package version.
-    """
+    """Returns the segm package version."""
     version = None
-    with open('./segm/version.py', encoding='utf-8') as f:
+    with open("./segm/version.py", encoding="utf-8") as f:
         for line in f:
             if line.startswith("__version__"):
                 version = line.split("=")[1].strip().strip('"').strip("'")
                 break
     return version
 
+
 def readme():
-    """ Returns README file as string.
-    """
-    with open('./segm/README.md', encoding='utf-8') as f:
+    """Returns README file as string."""
+    with open("./segm/README.md", encoding="utf-8") as f:
         content = f.read()
     return content
 
+
 def read_requirements_file():
-    """ Returns a list of the required librairies.
-    """
-    with open("./requirements.txt", encoding='utf-8') as f:
+    """Returns a list of the required librairies."""
+    with open("./requirements.txt", encoding="utf-8") as f:
         return [line.strip() for line in f]
 
 
@@ -71,7 +70,7 @@ setup(
     version=get_version(),
     description="Segmenter: Transformer for Semantic Segmentation adapted for G2TM.",
     long_description=readme(),
-    long_description_content_type= "text/markdown",
+    long_description_content_type="text/markdown",
     packages=["segm"],
     install_requires=read_requirements_file(),
 )

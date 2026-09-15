@@ -36,7 +36,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Evaluation and metrics utility functions for semantic segmentation task."""
 
 import os
 import pickle as pkl
@@ -71,7 +71,7 @@ def accuracy(output, target, topk=(1,)):
             correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
             correct_k /= batch_size
             res.append(correct_k)
-        return res
+        return tuple(res)
 
 
 # Segmentation mean IoU
@@ -89,8 +89,9 @@ def gather_data(seg_pred, tmp_dir=None):
         tmpprefix = os.path.expandvars(tmp_dir)
     max_len = 512
     # 32 is whitespace
-    dir_tensor = torch.full((max_len,), 32, dtype=torch.uint8,  # pylint: disable=E1101
-                            device=ptu.device)
+    dir_tensor = torch.full(  # pylint: disable=E1101
+        (max_len,), 32, dtype=torch.uint8, device=ptu.device
+    )
     if ptu.dist_rank == 0:
         tmpdir = tempfile.mkdtemp(prefix=tmpprefix)
         tmpdir = torch.tensor(  # pylint: disable=E1101
@@ -124,9 +125,10 @@ def compute_metrics(
     ret_cat_iou=False,
     distributed=False,
 ):
-    """ Compute accuracy metrics for semantic segmentation task.
-    """
-    ret_metrics_mean = torch.zeros(3, dtype=float, device=ptu.device)  # pylint: disable=E1101
+    """Compute accuracy metrics for semantic segmentation task."""
+    ret_metrics_mean = torch.zeros(  # pylint: disable=E1101
+        3, dtype=float, device=ptu.device
+    )
     if ptu.dist_rank == 0:
         list_seg_pred = []
         list_seg_gt = []
@@ -140,8 +142,7 @@ def compute_metrics(
             num_classes=n_cls,
             ignore_index=ignore_index,
         )
-        ret_metrics = [ret_metrics["aAcc"], ret_metrics["Acc"],
-                       ret_metrics["IoU"]]
+        ret_metrics = [ret_metrics["aAcc"], ret_metrics["Acc"], ret_metrics["IoU"]]
         ret_metrics_mean = torch.tensor(  # pylint: disable=E1101
             [
                 np.round(np.nanmean(ret_metric.astype(np.float64)) * 100, 2)

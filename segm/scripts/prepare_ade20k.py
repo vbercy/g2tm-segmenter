@@ -20,7 +20,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""
+ADE20K dataset download script.
 
+Example:
+    $ python prepare_ade20k.py /path/to/download/dir
+"""
 
 import zipfile
 from pathlib import Path
@@ -31,8 +36,7 @@ from segm.utils.download import download
 
 
 def download_ade(path, overwrite=False):
-    """Download ADE20K dataset.
-    """
+    """Download ADE20K dataset."""
     _aug_download_urls = [
         (
             "http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip",  # noqa: E501
@@ -47,8 +51,7 @@ def download_ade(path, overwrite=False):
     download_dir.mkdir(parents=True, exist_ok=True)
     for url, checksum in _aug_download_urls:
         filename = download(
-            url, path=str(download_dir),
-            overwrite=overwrite, sha1_hash=checksum
+            url, path=str(download_dir), overwrite=overwrite, sha1_hash=checksum
         )
         # extract
         with zipfile.ZipFile(filename, "r") as zip_ref:
@@ -58,11 +61,10 @@ def download_ade(path, overwrite=False):
 @click.command(help="Initialize ADE20K dataset.")
 @click.argument("download_dir", type=str)
 def main(download_dir):
-    """ Prepare ADE20K dataset.
-    """
+    """Prepare ADE20K dataset."""
     dataset_dir = Path(download_dir) / "ade20k"
     download_ade(dataset_dir, overwrite=False)
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

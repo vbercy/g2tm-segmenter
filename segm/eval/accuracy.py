@@ -20,7 +20,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""
+Compute ImageNet accuracy for a pretrained ViT model.
 
+Example: Evaluate an AuGReg pre-trained ViT-Small model.
+    $ python ./segm/eval/accuracy.py vit_small_patch_16_384 $DATASET -bs 64
+"""
 
 import click
 
@@ -36,22 +41,20 @@ from segm import config
 
 
 def compute_labels(model, batch):
-    """ Compute ImageNet accuracy metrics.
-    """
+    """Compute ImageNet accuracy metrics."""
     im = batch["im"]
     target = batch["target"]
 
     with torch.no_grad():
         with torch.cuda.amp.autocast():
             output = model.forward(im)
-    acc1, acc5 = accuracy(output, target, topk=(1, 5))
+    acc1, acc5 = accuracy(output, target, topk=(1, 5))  # pylint: disable=W0632
 
     return acc1.item(), acc5.item()
 
 
 def eval_dataset(model, dataset_kwargs):
-    """ Evaluate the dataset on ImageNet accuracy metrics.
-    """
+    """Evaluate the dataset on ImageNet accuracy metrics."""
     db = create_dataset(dataset_kwargs)
     print_freq = 20
     header = ""
@@ -74,8 +77,7 @@ def eval_dataset(model, dataset_kwargs):
 @click.option("-nw", "--num-workers", default=10, type=int)
 @click.option("-gpu", "--gpu/--no-gpu", default=True, is_flag=True)
 def main(backbone, imagenet_dir, batch_size, num_workers, gpu):
-    """ Compute the model's ImageNet accuracy scores.
-    """
+    """Compute the model's ImageNet accuracy scores."""
     ptu.set_gpu_mode(gpu)
     cfg = config.load_config()
     cfg = cfg["model"][backbone]
@@ -83,14 +85,14 @@ def main(backbone, imagenet_dir, batch_size, num_workers, gpu):
     cfg["image_size"] = (cfg["image_size"], cfg["image_size"])
 
     dataset_kwargs = {
-        "dataset": 'imagenet',
+        "dataset": "imagenet",
         "root_dir": imagenet_dir,
-        "image_size": cfg['image_size'],
-        "crop_size": cfg['image_size'],
-        "patch_size": cfg['patch_size'],
+        "image_size": cfg["image_size"],
+        "crop_size": cfg["image_size"],
+        "patch_size": cfg["patch_size"],
         "batch_size": batch_size,
         "num_workers": num_workers,
-        "split": 'val',
+        "split": "val",
         "normalization": STATS[cfg["normalization"]],
     }
 
@@ -101,4 +103,4 @@ def main(backbone, imagenet_dir, batch_size, num_workers, gpu):
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

@@ -36,7 +36,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Segmenter model PyTorch class."""
 
 import torch
 from torch import nn
@@ -46,8 +46,8 @@ from segm.model.utils import padding, unpadding
 
 
 class Segmenter(nn.Module):
-    """ Segmenter model.
-    """
+    """Segmenter model."""
+
     def __init__(
         self,
         encoder,
@@ -63,20 +63,18 @@ class Segmenter(nn.Module):
 
     @torch.jit.ignore
     def no_weight_decay(self):
-        """ Modules with no weight decay.
-        """
+        """Modules with no weight decay."""
+
         def append_prefix_no_weight_decay(prefix, module):
             return set(map(lambda x: prefix + x, module.no_weight_decay()))
 
-        nwd_params = (
-            append_prefix_no_weight_decay("encoder.", self.encoder)
-            .union(append_prefix_no_weight_decay("decoder.", self.decoder))
+        nwd_params = append_prefix_no_weight_decay("encoder.", self.encoder).union(
+            append_prefix_no_weight_decay("decoder.", self.decoder)
         )
         return nwd_params
 
     def forward(self, im):
-        """ Forward function.
-        """
+        """Forward function."""
         h_ori, w_ori = im.size(2), im.size(3)
         im = padding(im, self.patch_size)
         h, w = im.size(2), im.size(3)
@@ -87,13 +85,11 @@ class Segmenter(nn.Module):
         num_extra_tokens = 1 + self.encoder.distilled
         x = x[:, num_extra_tokens:]
         if self.token_reduction:
-            self.encoder.info["size"] = (
-                self.encoder.info["size"][:, num_extra_tokens:]
-            )
+            self.encoder.info["size"] = self.encoder.info["size"][:, num_extra_tokens:]
             if self.encoder.info["mask"] is not None:
-                self.encoder.info["mask"] = (
-                    self.encoder.info["mask"][:, num_extra_tokens:]
-                )
+                self.encoder.info["mask"] = self.encoder.info["mask"][
+                    :, num_extra_tokens:
+                ]
 
         masks = self.decoder(x, (h, w), self.token_reduction)
 
@@ -103,24 +99,21 @@ class Segmenter(nn.Module):
         return masks
 
     def get_attention_map_enc(self, im, layer_id):
-        """ Get attention map from a specified layer of the encoder.
-        """
+        """Get attention map from a specified layer of the encoder."""
         return self.encoder.get_attention_map(im, layer_id)
 
     def get_attention_map_dec(self, im, layer_id):
-        """ Get attention map from a specified layer of the decoder.
-        """
-        x, _ = self.encoder(im, return_features=True)
+        """Get attention map from a specified layer of the decoder."""
+        x = self.encoder(im, return_features=True)
 
         # remove CLS/DIST tokens for decoding
         num_extra_tokens = 1 + self.encoder.distilled
         x = x[:, num_extra_tokens:]
         if self.token_reduction:
-            self.encoder.info["size"] = (
-                self.encoder.info["size"][:, num_extra_tokens:]
-            )
+            self.encoder.info["size"] = self.encoder.info["size"][:, num_extra_tokens:]
             if self.encoder.info["mask"] is not None:
-                self.encoder.info["mask"] = self.encoder.info["mask"][:, num_extra_tokens:]
+                self.encoder.info["mask"] = self.encoder.info["mask"][
+                    :, num_extra_tokens:
+                ]
 
-        return self.decoder.get_attention_map(x, layer_id,
-                                              self.token_reduction)
+        return self.decoder.get_attention_map(x, layer_id, self.token_reduction)

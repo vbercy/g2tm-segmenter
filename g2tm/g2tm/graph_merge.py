@@ -11,29 +11,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Functions performing G2TM's token fusion on a token sequence."""
 
 import math
-from os import environ
 from typing import List, Tuple, Union
 
 import torch
 import torch.nn.functional as F
 import networkx as nx
 
-environ["NETWORKX_AUTOMATIC_BACKENDS"] = "cugraph"
-environ["NX_CUGRAPH_AUTOCONFIG"] = "True"
-
 MayBeTensor = Union[torch.Tensor, None]
-FourTensors = Tuple[torch.Tensor, torch.Tensor,
-                    torch.Tensor, MayBeTensor]
+FourTensors = Tuple[torch.Tensor, torch.Tensor, torch.Tensor, MayBeTensor]
 TripleIntList = List[List[List[int]]]
 DoubleIntList = List[List[int]]
 
 
-def get_mergeable_idxs(x_feat: torch.Tensor, threshold: float,
-                       base_grid_h: int, base_grid_w: int,
-                       b: int, n: int,
-                       device: torch.device) -> TripleIntList:
+def get_mergeable_idxs(
+    x_feat: torch.Tensor,
+    threshold: float,
+    base_grid_h: int,
+    base_grid_w: int,
+    b: int,
+    n: int,
+    device: torch.device,
+) -> TripleIntList:
     """Determine the indices of the groups of tokens to merge.
 
     This function computes the cosine similarity between all tokens and their
@@ -61,10 +62,16 @@ def get_mergeable_idxs(x_feat: torch.Tensor, threshold: float,
     # Determine indices that have a neighbor on its right and below it.
     # Here, we need to consider the tokens as they were placed like
     # the patches in the image.
-    has_right_idxs = ((torch.arange(base_grid_h, device=device)[:, None]  # pylint: disable=E1101
-                      * base_grid_w)
-                      + torch.arange(base_grid_w - 1, device=device)).ravel()  # pylint: disable=E1101
-    has_bottom_idxs = torch.arange(n - base_grid_w, device=device)  # pylint: disable=E1101
+    has_right_idxs = (
+        (
+            torch.arange(base_grid_h, device=device)[:, None]  # pylint: disable=E1101
+            * base_grid_w
+        )
+        + torch.arange(base_grid_w - 1, device=device)  # pylint: disable=E1101
+    ).ravel()
+    has_bottom_idxs = torch.arange(  # pylint: disable=E1101
+        n - base_grid_w, device=device
+    )
 
     # Compute cosine similarities of tokens with their right and bottom
     # neighbors
@@ -73,7 +80,8 @@ def get_mergeable_idxs(x_feat: torch.Tensor, threshold: float,
     )
     bottom_sims = F.cosine_similarity(  # pylint: disable=E1102
         x_feat[:, has_bottom_idxs + base_grid_w, :],
-        x_feat[:, has_bottom_idxs, :], dim=-1
+        x_feat[:, has_bottom_idxs, :],
+        dim=-1,
     )
 
     # === CONNECTED COMPONENTS === #
@@ -81,7 +89,9 @@ def get_mergeable_idxs(x_feat: torch.Tensor, threshold: float,
     # Connection masks based on the similarity with the right and bottom
     # neighbors (if exist)
     right_mask = torch.zeros((b, n), dtype=bool, device=device)  # pylint: disable=E1101
-    bottom_mask = torch.zeros((b, n), dtype=bool, device=device)  # pylint: disable=E1101
+    bottom_mask = torch.zeros(  # pylint: disable=E1101
+        (b, n), dtype=bool, device=device
+    )
     node_mean = torch.tensor(threshold, device=device)  # pylint: disable=E1101
     right_mask[:, has_right_idxs] = right_sims > node_mean
     bottom_mask[:, has_bottom_idxs] = bottom_sims > node_mean
@@ -102,18 +112,22 @@ def get_mergeable_idxs(x_feat: torch.Tensor, threshold: float,
             (right_connections + 1, bottom_connections + base_grid_w), dim=0
         )
         # Create NetworkX graph and find connected components
-        graph = nx.Graph(torch.cat((src_nodes, dst_nodes), dim=-1).tolist())  # pylint: disable=E1101
-        connected_components.append(
-            list(map(list, nx.connected_components(graph)))
+        graph = nx.Graph(
+            torch.cat((src_nodes, dst_nodes), dim=-1).tolist()  # pylint: disable=E1101
         )
+        connected_components.append(list(map(list, nx.connected_components(graph))))
 
     return connected_components
 
 
-def padded_merge(x_feat: torch.Tensor,
-                 connected_components: TripleIntList,
-                 b: int, n: int, d: int,
-                 device: torch.device) -> FourTensors:
+def padded_merge(
+    x_feat: torch.Tensor,
+    connected_components: TripleIntList,
+    b: int,
+    n: int,
+    d: int,
+    device: torch.device,
+) -> FourTensors:
     """Merge token features with each other according to indices in argument.
 
     This function computes the mean token feature per connected component. For
@@ -140,7 +154,11 @@ def padded_merge(x_feat: torch.Tensor,
         mask (torch.Tensor): Binary mask for reduced tokens.
     """
 
-    source = torch.eye(n, dtype=int, device=device).expand(b, n, n).clone()  # pylint: disable=E1101
+    source = (
+        torch.eye(n, dtype=torch.int32, device=device)  # pylint: disable=E1101
+        .expand(b, n, n)
+        .clone()
+    )
     mask = torch.ones(b, n, dtype=bool, device=device)  # pylint: disable=E1101
 
     for k, cc in enumerate(connected_components):
@@ -155,27 +173,25 @@ def padded_merge(x_feat: torch.Tensor,
 
             for i, fused_tokens in enumerate(cc):
                 n_tokens = len(fused_tokens)
-                mean_idxs.append(fused_tokens.pop(n_tokens//2))
+                mean_idxs.append(fused_tokens.pop(n_tokens // 2))
                 to_reduce_idxs += fused_tokens
                 merge_idxs += [[i]] * (n_tokens - 1)
 
             mean_idxs = torch.tensor(mean_idxs, device=device)  # pylint: disable=E1101
-            to_reduce_idxs = torch.tensor(to_reduce_idxs, device=device)  # pylint: disable=E1101
-            merge_idxs = torch.tensor(merge_idxs, device=device)  # pylint: disable=E1101
+            to_reduce_idxs = torch.tensor(  # pylint: disable=E1101
+                to_reduce_idxs, device=device
+            )
+            merge_idxs = torch.tensor(  # pylint: disable=E1101
+                merge_idxs, device=device
+            )
 
             # Compute the mean tokens for each connected component and the
             # corresponding source vectors
-            x_feat[k, mean_idxs] = (
-                x_feat[k, mean_idxs].scatter_reduce(0,
-                                                    merge_idxs.expand(-1, d),
-                                                    x_feat[k, to_reduce_idxs],
-                                                    reduce="sum")
+            x_feat[k, mean_idxs] = x_feat[k, mean_idxs].scatter_reduce(
+                0, merge_idxs.expand(-1, d), x_feat[k, to_reduce_idxs], reduce="sum"
             )
-            source[k, mean_idxs] = (
-                source[k, mean_idxs].scatter_reduce(0,
-                                                    merge_idxs.expand(-1, n),
-                                                    source[k, to_reduce_idxs],
-                                                    reduce="amax")
+            source[k, mean_idxs] = source[k, mean_idxs].scatter_reduce(
+                0, merge_idxs.expand(-1, n), source[k, to_reduce_idxs], reduce="amax"
             )
 
             # Fixing all fused tokens to 0 is not necessary as we use masked
@@ -190,9 +206,13 @@ def padded_merge(x_feat: torch.Tensor,
     return x_feat, source, size, mask
 
 
-def sparse_merge(x_feat: torch.Tensor,
-                 connected_components: DoubleIntList,
-                 n: int, d: int, device: torch.device) -> FourTensors:
+def sparse_merge(
+    x_feat: torch.Tensor,
+    connected_components: DoubleIntList,
+    n: int,
+    d: int,
+    device: torch.device,
+) -> FourTensors:
     """Merge token features with each other according to indices in argument.
 
     This function computes the mean token feature per connected component. For
@@ -221,7 +241,11 @@ def sparse_merge(x_feat: torch.Tensor,
         None: Instead of the binary mask.
     """
 
-    source = torch.eye(n, dtype=int, device=device).expand(1, n, n).clone()  # pylint: disable=E1101
+    source = (
+        torch.eye(n, dtype=torch.int32, device=device)  # pylint: disable=E1101
+        .expand(1, n, n)
+        .clone()
+    )
     mask = torch.ones(n, dtype=bool, device=device)  # pylint: disable=E1101
     size = torch.ones(1, n, dtype=int, device=device)  # pylint: disable=E1101
 
@@ -236,25 +260,23 @@ def sparse_merge(x_feat: torch.Tensor,
 
         for i, fused_tokens in enumerate(connected_components):
             n_tokens = len(fused_tokens)
-            mean_idxs.append(fused_tokens.pop(n_tokens//2))
+            mean_idxs.append(fused_tokens.pop(n_tokens // 2))
             to_reduce_idxs += fused_tokens
             merge_idxs += [[i]] * (n_tokens - 1)
 
         mean_idxs = torch.tensor(mean_idxs, device=device)  # pylint: disable=E1101
-        to_reduce_idxs = torch.tensor(to_reduce_idxs, device=device)  # pylint: disable=E1101
+        to_reduce_idxs = torch.tensor(  # pylint: disable=E1101
+            to_reduce_idxs, device=device
+        )
         merge_idxs = torch.tensor(merge_idxs, device=device)  # pylint: disable=E1101
 
         # Compute the mean tokens for each connected component and the
         # corresponding source vectors
-        x_feat[0, mean_idxs] = (
-            x_feat[0, mean_idxs].scatter_reduce(0, merge_idxs.expand(-1, d),
-                                                x_feat[0, to_reduce_idxs],
-                                                reduce="sum")
+        x_feat[0, mean_idxs] = x_feat[0, mean_idxs].scatter_reduce(
+            0, merge_idxs.expand(-1, d), x_feat[0, to_reduce_idxs], reduce="sum"
         )
-        source[0, mean_idxs] = (
-            source[0, mean_idxs].scatter_reduce(0, merge_idxs.expand(-1, n),
-                                                source[0, to_reduce_idxs],
-                                                reduce="amax")
+        source[0, mean_idxs] = source[0, mean_idxs].scatter_reduce(
+            0, merge_idxs.expand(-1, n), source[0, to_reduce_idxs], reduce="amax"
         )
 
         # Pop all fused tokens except the ones we assign the means
@@ -268,9 +290,12 @@ def sparse_merge(x_feat: torch.Tensor,
     return x_feat, source, size, None
 
 
-def g2tm_merge(feat: torch.Tensor, threshold: float,
-               is_encoder: bool = True,
-               distill_token: bool = False) -> FourTensors:
+def g2tm_merge(
+    feat: torch.Tensor,
+    threshold: float,
+    is_encoder: bool = True,
+    distill_token: bool = False,
+) -> FourTensors:
     """Applies the entire G2TM processing to a token feature sequence.
 
     This function determines the groups of token indices to merge with each
@@ -311,28 +336,30 @@ def g2tm_merge(feat: torch.Tensor, threshold: float,
 
     # Get the indices of tokens to merge
     with torch.no_grad():
-        connected_components = get_mergeable_idxs(x_feat, threshold,
-                                                  base_grid_h, base_grid_w,
-                                                  b, n, device)
+        connected_components = get_mergeable_idxs(
+            x_feat, threshold, base_grid_h, base_grid_w, b, n, device
+        )
 
     # Merge tokens
     if b == 1:
         # Reduced tokens are popped
-        x_feat, source, size, mask = (
-            sparse_merge(x_feat, connected_components[0], n, d, device)
+        x_feat, source, size, mask = sparse_merge(
+            x_feat, connected_components[0], n, d, device
         )
     else:
         # Reduced tokens are filled with zeros
-        x_feat, source, size, mask = (
-            padded_merge(x_feat, connected_components, b, n, d, device)
+        x_feat, source, size, mask = padded_merge(
+            x_feat, connected_components, b, n, d, device
         )
-        mask = torch.cat(  # pylint: disable=E1101
-            (torch.ones(b, protected, dtype=bool, device=device), mask), 1  # pylint: disable=E1101
+        fill_mask = torch.ones(  # pylint: disable=E1101
+            b, protected, dtype=bool, device=device
         )
+        mask = torch.cat((fill_mask, mask), 1)  # pylint: disable=E1101
 
     feat = torch.cat((x_protected, x_feat), dim=1)  # pylint: disable=E1101
-    size = torch.cat(  # pylint: disable=E1101
-        (torch.ones(b, protected, dtype=int, device=device), size), 1  # pylint: disable=E1101
+    fill_size = torch.ones(  # pylint: disable=E1101
+        b, protected, dtype=int, device=device
     )
+    size = torch.cat((fill_size, size), 1)  # pylint: disable=E1101
 
     return feat, source, size, mask

@@ -13,14 +13,15 @@
 # limitations under the License.
 
 # Adapted from 2020 Ross Wightman (https://github.com/rwightman/pytorch-image-models)
-
+"""
+PyTorch implementations of different Attention layers and Transformer blocks.
+"""
 
 from typing import Tuple
 
 import torch
 
 from segm.model.blocks import Attention, Block
-
 
 TwoTensors = Tuple[torch.Tensor, torch.Tensor]
 ThreeTensors = Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
@@ -42,8 +43,7 @@ class MaskedAttention(Attention):
         scale (float): Scaling factor applied to attention scores.
     """
 
-    def forward(self, x: torch.Tensor,
-                mask: torch.Tensor = None) -> TwoTensors:
+    def forward(self, x: torch.Tensor, mask: torch.Tensor = None) -> TwoTensors:
         """Multi-head self-attention implem. with optional token masking.
 
         This method applies masked self-attention to a token feature sequence.
@@ -75,7 +75,7 @@ class MaskedAttention(Attention):
         attn = (q @ k.transpose(-2, -1)) * self.scale
 
         if mask is not None:
-            attn = attn.masked_fill(~mask[:, None, None, :], float('-inf'))
+            attn = attn.masked_fill(~mask[:, None, None, :], float("-inf"))
 
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
@@ -106,8 +106,7 @@ class ProportionalAttention(Attention):
         scale (float): Scaling factor applied to attention scores.
     """
 
-    def forward(self, x: torch.Tensor,
-                size: torch.Tensor = None) -> TwoTensors:
+    def forward(self, x: torch.Tensor, size: torch.Tensor = None) -> TwoTensors:
         """Multi-head proportional self-attention implementation with optional
         token masking.
 
@@ -176,8 +175,7 @@ class InverseProportionalAttention(Attention):
         scale (float): Scaling factor applied to attention scores.
     """
 
-    def forward(self, x: torch.Tensor,
-                size: torch.Tensor = None) -> TwoTensors:
+    def forward(self, x: torch.Tensor, size: torch.Tensor = None) -> TwoTensors:
         """Multi-head inverse proportional self-attention implementation with
         optional token masking.
 
@@ -215,7 +213,7 @@ class InverseProportionalAttention(Attention):
         # Apply inverted proportional attention and fixing attention of all
         # padded to 0 tokens to -inf to apply masked attn at the same time
         if size is not None:
-            log_size = size.log().masked_fill(size == 0, float('inf'))
+            log_size = size.log().masked_fill(size == 0, float("inf"))
             attn.sub_(log_size[:, None, None, :])
 
         attn = attn.softmax(dim=-1)

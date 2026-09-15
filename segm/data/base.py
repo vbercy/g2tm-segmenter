@@ -36,7 +36,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Base dataset wrapper class."""
 
 from pathlib import Path
 
@@ -51,8 +51,8 @@ from segm.data.utils import STATS, IGNORE_LABEL
 
 
 class BaseMMSeg(Dataset):
-    """ Base dataset class.
-    """
+    """Base dataset class."""
+
     def __init__(
         self,
         image_size,
@@ -78,12 +78,10 @@ class BaseMMSeg(Dataset):
         self.ratio = config.max_ratio
         self.dataset = None
         self.config = self.update_default_config(config)
-        self.dataset = build_dataset(getattr(self.config.data,
-                                             f"{self.split}"))
+        self.dataset = build_dataset(getattr(self.config.data, f"{self.split}"))
 
     def update_default_config(self, config):
-        """ Update default configuration.
-        """
+        """Update default configuration."""
         train_splits = ["train", "trainval"]
         if self.split in train_splits:
             config_pipeline = getattr(config, "train_pipeline")
@@ -130,8 +128,7 @@ class BaseMMSeg(Dataset):
         return config
 
     def set_multiscale_mode(self):
-        """ Set multi-scale image ratios.
-        """
+        """Set multi-scale image ratios."""
         self.config.data.val.pipeline[1]["img_ratios"] = [
             0.5,
             0.75,
@@ -150,8 +147,7 @@ class BaseMMSeg(Dataset):
             1.75,
         ]
         self.config.data.test.pipeline[1]["flip"] = True
-        self.dataset = build_dataset(getattr(self.config.data,
-                                             f"{self.split}"))
+        self.dataset = build_dataset(getattr(self.config.data, f"{self.split}"))
 
     def __getitem__(self, idx):
         data = self.dataset[idx]
@@ -176,14 +172,12 @@ class BaseMMSeg(Dataset):
         return out
 
     def get_gt_seg_maps(self):
-        """ Get groundtruth segmentation maps.
-        """
+        """Get groundtruth segmentation maps."""
         dataset = self.dataset
         gt_seg_maps = {}
         for img_info in dataset.img_infos:
             seg_map = Path(dataset.ann_dir) / img_info["ann"]["seg_map"]
-            gt_seg_map = mmcv.imread(seg_map, flag="unchanged",
-                                     backend="pillow")
+            gt_seg_map = mmcv.imread(seg_map, flag="unchanged", backend="pillow")
             gt_seg_map[gt_seg_map == self.ignore_label] = IGNORE_LABEL
             if self.reduce_zero_label:  # pylint: disable=E1101
                 gt_seg_map[gt_seg_map != IGNORE_LABEL] -= 1
@@ -195,23 +189,18 @@ class BaseMMSeg(Dataset):
 
     @property
     def unwrapped(self):
-        """ Unwrap.
-        """
+        """Unwrap."""
         return self
 
     def set_epoch(self, epoch):
-        """ Set number of epochs.
-        """
+        """Set number of epochs."""
 
     def get_diagnostics(self, logger):
-        """ Get diagnostics from logger.
-        """
+        """Get diagnostics from logger."""
 
     def get_snapshot(self):
-        """ Get snapshot.
-        """
+        """Get snapshot."""
         return {}
 
     def end_epoch(self, epoch):
-        """ Get end epoch.
-        """
+        """Get end epoch."""

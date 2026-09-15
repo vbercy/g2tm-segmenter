@@ -13,7 +13,11 @@
 # limitations under the License.
 
 # Modifications based on code from Narges Norouzi et al. (ALGM)
+"""
+Script to compute the number of floating-point operations done by the model.
 
+Example: see README.md
+"""
 
 import os
 from typing import Tuple
@@ -35,15 +39,15 @@ from segm.data.utils import STATS
 
 import g2tm
 
-
 warnings.filterwarnings("ignore")
 
 TwoArrays = Tuple[np.array, np.array]
 
 
 @torch.no_grad()
-def compute_flops_per_image(model: nn.Module, validation_loader: Dataset,
-                            device: str) -> np.array:
+def compute_flops_per_image(
+    model: nn.Module, validation_loader: Dataset, device: str
+) -> np.array:
     """Average FLOPs made by the model for one forward-pass.
 
     This function computes the average number of floating-point operations
@@ -67,9 +71,9 @@ def compute_flops_per_image(model: nn.Module, validation_loader: Dataset,
     return np.mean(gflops)
 
 
-def compute_flops_per_image_per_module(model: nn.Module,
-                                       validation_loader: Dataset,
-                                       device: str) -> TwoArrays:
+def compute_flops_per_image_per_module(
+    model: nn.Module, validation_loader: Dataset, device: str
+) -> TwoArrays:
     """Average FLOPs made by the model encoder and decoder for one
     forward-pass.
 
@@ -96,23 +100,18 @@ def compute_flops_per_image_per_module(model: nn.Module,
         encoded = model.encoder(image, return_features=True)
 
         enc_flops = FlopCountAnalysis(model.encoder, image)
-        (enc_flops
-         .unsupported_ops_warnings(False)
-         .uncalled_modules_warnings(False))
+        (enc_flops.unsupported_ops_warnings(False).uncalled_modules_warnings(False))
         enc_gflops.append(enc_flops.total() / 1e9)
 
         if model.token_reduction:
             model.encoder.info["size"] = model.encoder.info["size"][:, 1:]
             if model.encoder.info["mask"] is not None:
-                model.encoder.info["mask"] = (
-                    model.encoder.info["mask"][:, 1:]
-                )
+                model.encoder.info["mask"] = model.encoder.info["mask"][:, 1:]
 
-        dec_flops = FlopCountAnalysis(model.decoder, (encoded[:, 1:], (h, w),
-                                                      model.token_reduction))
-        (dec_flops
-         .unsupported_ops_warnings(False)
-         .uncalled_modules_warnings(False))
+        dec_flops = FlopCountAnalysis(
+            model.decoder, (encoded[:, 1:], (h, w), model.token_reduction)
+        )
+        (dec_flops.unsupported_ops_warnings(False).uncalled_modules_warnings(False))
         dec_gflops.append(dec_flops.total() / 1e9)
 
     return np.mean(enc_gflops), np.mean(dec_gflops)
@@ -128,9 +127,17 @@ def compute_flops_per_image_per_module(model: nn.Module,
 @click.option("--prop-attn/--no-prop-attn", default=False, is_flag=True)
 @click.option("--iprop-attn/--no-iprop-attn", default=False, is_flag=True)
 @click.option("--enc-dec/--no-enc-dec", default=False, is_flag=True)
-def main(model_path: str, dataset_name: str, batch_size: int, patch_type: str,
-         selected_layer: int, threshold: float, prop_attn: bool,
-         iprop_attn: bool, enc_dec: bool):
+def main(
+    model_path: str,
+    dataset_name: str,
+    batch_size: int,
+    patch_type: str,
+    selected_layer: int,
+    threshold: float,
+    prop_attn: bool,
+    iprop_attn: bool,
+    enc_dec: bool,
+):
     """Compute the number of floating-point operations made by the model.
 
     Args:
@@ -145,36 +152,37 @@ def main(model_path: str, dataset_name: str, batch_size: int, patch_type: str,
             separatly.
     """
 
-    device = 'cuda:0'
-    root_dir = os.getenv('DATASET')
+    device = "cuda:0"
+    root_dir = os.getenv("DATASET")
 
-    dataset_path, dataset_txt_path = get_dataset_inference_path(dataset_name,
-                                                                root_dir)
+    dataset_path, dataset_txt_path = get_dataset_inference_path(dataset_name, root_dir)
 
     model, variant = load_model(model_path)
-    input_size = variant['dataset_kwargs']['crop_size']
+    input_size = variant["dataset_kwargs"]["crop_size"]
     normalization = variant["dataset_kwargs"]["normalization"]
     stats = STATS[normalization]
 
     if patch_type == "graph":
-        g2tm.graph_segmenter_patch(model, selected_layer, threshold,
-                                   prop_attn, iprop_attn)
+        g2tm.graph_segmenter_patch(
+            model, selected_layer, threshold, prop_attn, iprop_attn
+        )
 
     model.eval()
     model.to(device)
 
-    validation_loader = dataset_prepare(dataset_path, dataset_txt_path, stats,
-                                        batch_size, input_size)
+    validation_loader = dataset_prepare(
+        dataset_path, dataset_txt_path, stats, batch_size, input_size
+    )
     if enc_dec:
         enc_gflops, dec_gflops = compute_flops_per_image_per_module(
             model, validation_loader, device
         )
-        print(f'Encoder GFlops: {enc_gflops:0.3f}', flush=True)
-        print(f'Decoder GFlops: {dec_gflops:0.3f}', flush=True)
+        print(f"Encoder GFlops: {enc_gflops:0.3f}", flush=True)
+        print(f"Decoder GFlops: {dec_gflops:0.3f}", flush=True)
 
     gflops = compute_flops_per_image(model, validation_loader, device)
-    print(f'GFlops: {gflops:0.3f}', flush=True)
+    print(f"GFlops: {gflops:0.3f}", flush=True)
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

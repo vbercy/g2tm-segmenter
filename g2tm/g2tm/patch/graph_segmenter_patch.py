@@ -20,7 +20,9 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 # --------------------------------------------------------
-
+"""Patching Segmenter model by inserting G2TM within one of its encoder's
+Transformer block.
+"""
 
 from typing import Tuple
 
@@ -31,10 +33,14 @@ from segm.model.segmenter import Segmenter
 from segm.model.vit import VisionTransformer
 
 from g2tm.graph_merge import g2tm_merge
-from g2tm.attention import (MaskedAttention, MaskedBlock, ProportionalBlock,
-                            ProportionalAttention, InverseProportionalBlock,
-                            InverseProportionalAttention)
-
+from g2tm.attention import (
+    MaskedAttention,
+    MaskedBlock,
+    ProportionalBlock,
+    ProportionalAttention,
+    InverseProportionalBlock,
+    InverseProportionalAttention,
+)
 
 TwoTensors = Tuple[torch.Tensor, torch.Tensor]
 ThreeTensors = Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
@@ -60,15 +66,12 @@ class G2TMBlock(Block):
     """
 
     def _drop_path1(self, x):
-        return (self.drop_path1(x) if hasattr(self, "drop_path1")
-                else self.drop_path(x))
+        return self.drop_path1(x) if hasattr(self, "drop_path1") else self.drop_path(x)
 
     def _drop_path2(self, x):
-        return (self.drop_path2(x) if hasattr(self, "drop_path2")
-                else self.drop_path(x))
+        return self.drop_path2(x) if hasattr(self, "drop_path2") else self.drop_path(x)
 
-    def forward(self, x: torch.Tensor,
-                return_attention: bool = False) -> TwoTensors:
+    def forward(self, x: torch.Tensor, return_attention: bool = False) -> TwoTensors:
         """Modified multi-head self-attention block implementation with
         application of G2TM token reduction.
 
@@ -91,11 +94,11 @@ class G2TMBlock(Block):
         x = x + self._drop_path1(y)
 
         # G2TM module
-        x, self.info["source"], self.info["size"], self.info["mask"] = (
-            g2tm_merge(x,
-                       self.info["threshold"],
-                       self.info["is_encoder"],
-                       self.info["distill_token"])
+        x, self.info["source"], self.info["size"], self.info["mask"] = g2tm_merge(
+            x,
+            self.info["threshold"],
+            self.info["is_encoder"],
+            self.info["distill_token"],
         )
 
         x = x + self._drop_path2(self.mlp(self.norm2(x)))
@@ -135,9 +138,13 @@ class G2TMVisionTransformer(VisionTransformer):
         return super().get_attention_map(*args, **kwdargs)
 
 
-def apply_patch(model: Segmenter, selected_layer: int,
-                threshold: float, prop_attn: bool = False,
-                iprop_attn: bool = False):
+def apply_patch(
+    model: Segmenter,
+    selected_layer: int,
+    threshold: float,
+    prop_attn: bool = False,
+    iprop_attn: bool = False,
+):
     """Apply the modifications for G2TM token reduction method on
     the PyTorch Segmenter model.
 
@@ -171,17 +178,18 @@ def apply_patch(model: Segmenter, selected_layer: int,
         "selected_layer": model.encoder.selected_layer,
         "threshold": model.encoder.threshold,
     }
-    print("Proportional Attention activated: ",
-          model.encoder.info["prop_attn"])
-    print("Inverse Proportional Attention activated: ",
-          model.encoder.info["iprop_attn"])
+    print("Proportional Attention activated: ", model.encoder.info["prop_attn"])
+    print(
+        "Inverse Proportional Attention activated: ", model.encoder.info["iprop_attn"]
+    )
 
     if model.encoder.info["prop_attn"] and model.encoder.info["iprop_attn"]:
-        raise ValueError("Inverse Proportional Attention and Proportional"
-                         "Attention cannot be activated at the same time.")
+        raise ValueError(
+            "Inverse Proportional Attention and Proportional"
+            "Attention cannot be activated at the same time."
+        )
 
-    if (hasattr(model.encoder, "dist_token")
-            and model.encoder.dist_token is not None):
+    if hasattr(model.encoder, "dist_token") and model.encoder.dist_token is not None:
         model.encoder.info["distill_token"] = True
 
     # (G2TMBlock or (Inverse)ProportionalBlock) + G2TMAttention => masked

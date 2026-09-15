@@ -36,7 +36,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Engine utility functions for training and evaluation of the model."""
 
 import math
 
@@ -57,10 +57,9 @@ def train_one_epoch(
     epoch,
     amp_autocast,
     loss_scaler,
-    writer
+    writer,
 ):
-    """ Train the model for a single epoch.
-    """
+    """Train the model for a single epoch."""
     criterion = torch.nn.CrossEntropyLoss(ignore_index=IGNORE_LABEL)
     logger = MetricLogger(delimiter="  ")
     header = f"Epoch: [{epoch}]"
@@ -107,32 +106,36 @@ def train_one_epoch(
         # Get the metrics at the beginning of the training and every
         # print_freq batches
         if num_updates == 1 or num_updates % print_freq == 0:
-            writer.add_scalar("train_loss",
-                              logger.loss.value,
-                              num_updates, new_style=True)
-            writer.add_scalar("learning_rate",
-                              logger.learning_rate.value,
-                              num_updates, new_style=True)
+            writer.add_scalar(
+                "train_loss", logger.loss.value, num_updates, new_style=True
+            )
+            writer.add_scalar(
+                "learning_rate", logger.learning_rate.value, num_updates, new_style=True
+            )
             if torch.cuda.is_available():
-                writer.add_scalar("train_cuda_mem",
-                                  torch.cuda.max_memory_allocated() / mb,
-                                  num_updates, new_style=True)
+                writer.add_scalar(
+                    "train_cuda_mem",
+                    torch.cuda.max_memory_allocated() / mb,
+                    num_updates,
+                    new_style=True,
+                )
                 torch.cuda.reset_peak_memory_stats()
 
     lr_scheduler.step_update(epoch)
 
     # Get metrics for the last batch of the epoch
     if num_updates % print_freq > 0:
-        writer.add_scalar("train_loss",
-                          logger.loss.value,
-                          num_updates, new_style=True)
-        writer.add_scalar("learning_rate",
-                          logger.learning_rate.value,
-                          num_updates, new_style=True)
+        writer.add_scalar("train_loss", logger.loss.value, num_updates, new_style=True)
+        writer.add_scalar(
+            "learning_rate", logger.learning_rate.value, num_updates, new_style=True
+        )
         if torch.cuda.is_available():
-            writer.add_scalar("train_cuda_mem",
-                              torch.cuda.max_memory_allocated() / mb,
-                              num_updates, new_style=True)
+            writer.add_scalar(
+                "train_cuda_mem",
+                torch.cuda.max_memory_allocated() / mb,
+                num_updates,
+                new_style=True,
+            )
             torch.cuda.reset_peak_memory_stats()
 
     return logger
@@ -147,8 +150,7 @@ def evaluate(
     window_stride,
     amp_autocast,
 ):
-    """ Evaluate the model using accuracy metrics of semantic segmentation.
-    """
+    """Evaluate the model using accuracy metrics of semantic segmentation."""
     model_without_ddp = model
     if hasattr(model, "module"):
         model_without_ddp = model.module

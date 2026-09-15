@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""ImageNet dataset wrapper class."""
 
 from pathlib import Path
 
@@ -32,8 +32,8 @@ from segm.data import utils
 
 
 class ImagenetDataset(Dataset):
-    """ ImageNet dataset class.
-    """
+    """ImageNet dataset class."""
+
     def __init__(
         self,
         root_dir,
@@ -54,8 +54,7 @@ class ImagenetDataset(Dataset):
         if split == "train":
             self.transform = transforms.Compose(
                 [
-                    transforms.RandomResizedCrop(self.crop_size,
-                                                 interpolation=3),
+                    transforms.RandomResizedCrop(self.crop_size, interpolation=3),
                     transforms.RandomHorizontalFlip(),
                     transforms.ToTensor(),
                 ]
@@ -74,8 +73,7 @@ class ImagenetDataset(Dataset):
 
     @property
     def unwrapped(self):
-        """ Unwrap.
-        """
+        """Unwrap."""
         return self
 
     def __len__(self):

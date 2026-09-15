@@ -20,11 +20,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Cityscapes dataset wrapper class."""
 
 from pathlib import Path
 
 import numpy as np
+
 try:
     import cityscapesscripts.helpers.labels as CSLabels
 except ImportError as e:
@@ -39,14 +40,11 @@ CITYSCAPES_CATS_PATH = Path(__file__).parent / "config" / "cityscapes.yml"
 
 
 class CityscapesDataset(BaseMMSeg):
-    """ Cityscapes dataset class.
-    """
+    """Cityscapes dataset class."""
+
     def __init__(self, image_size, crop_size, split, **kwargs):
-        super().__init__(image_size, crop_size, split,
-                         CITYSCAPES_CONFIG_PATH, **kwargs)
-        self.names, self.colors = utils.dataset_cat_description(
-            CITYSCAPES_CATS_PATH
-        )
+        super().__init__(image_size, crop_size, split, CITYSCAPES_CONFIG_PATH, **kwargs)
+        self.names, self.colors = utils.dataset_cat_description(CITYSCAPES_CATS_PATH)
         self.n_cls = 19
         self.ignore_label = 255
         self.reduce_zero_label = False
@@ -62,8 +60,7 @@ class CityscapesDataset(BaseMMSeg):
         return config
 
     def test_post_process(self, labels):
-        """ Test post-processing.
-        """
+        """Test post-processing."""
         labels_copy = np.copy(labels)
         cats = np.unique(labels_copy)
         for cat in cats:

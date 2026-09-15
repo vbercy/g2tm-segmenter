@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""ADE20K dataset configuration file."""
 
 # dataset settings
 dataset_type = "ADE20KDataset"
@@ -79,7 +79,7 @@ fps_val_pipeline = [
         img_scale=(512, 512),
         flip=False,
         transforms=[
-            dict(type="Resize", img_scale=(512,512),keep_ratio=False),
+            dict(type="Resize", img_scale=(512, 512), keep_ratio=False),
             dict(type="Normalize", **img_norm_cfg),
             dict(type="ImageToTensor", keys=["img"]),
             dict(type="Collect", keys=["img"]),

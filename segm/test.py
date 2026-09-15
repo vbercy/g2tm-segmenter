@@ -11,7 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Script to compute the mIoU score of a model.
 
+Example: see README.md
+"""
 
 import warnings
 from contextlib import suppress
@@ -27,7 +31,6 @@ import segm.utils.torch as ptu
 
 import g2tm
 
-
 warnings.filterwarnings("ignore")
 
 
@@ -39,8 +42,14 @@ warnings.filterwarnings("ignore")
 @click.option("--threshold", default=0.88, type=float)
 @click.option("--prop-attn/--no-prop-attn", default=False, is_flag=True)
 @click.option("--iprop-attn/--no-iprop-attn", default=False, is_flag=True)
-def main(model_path: str, patch_type: str, selected_layer: int,
-         threshold: float, prop_attn: bool, iprop_attn: bool):
+def main(
+    model_path: str,
+    patch_type: str,
+    selected_layer: int,
+    threshold: float,
+    prop_attn: bool,
+    iprop_attn: bool,
+):
     """Compute the mIoU score of the model.
 
     Args:
@@ -55,15 +64,16 @@ def main(model_path: str, patch_type: str, selected_layer: int,
     distributed.init_process()
 
     model, variant = load_model(model_path)
-    dataset_kwargs = variant['dataset_kwargs']
+    dataset_kwargs = variant["dataset_kwargs"]
     dataset_kwargs["batch_size"] = 1
     dataset_kwargs["split"] = "val"
     dataset_kwargs["crop"] = False
     validation_loader = create_dataset(dataset_kwargs)
 
     if patch_type == "graph":
-        g2tm.graph_segmenter_patch(model, selected_layer, threshold,
-                                   prop_attn, iprop_attn)
+        g2tm.graph_segmenter_patch(
+            model, selected_layer, threshold, prop_attn, iprop_attn
+        )
 
     model.eval()
     for p in model.parameters():
@@ -76,10 +86,14 @@ def main(model_path: str, patch_type: str, selected_layer: int,
         amp_autocast = suppress
 
     val_seg_gt = validation_loader.dataset.get_gt_seg_maps()
-    eval_logger = evaluate(model, validation_loader, val_seg_gt,
-                           variant["inference_kwargs"]["window_size"],
-                           variant["inference_kwargs"]["window_stride"],
-                           amp_autocast)
+    eval_logger = evaluate(
+        model,
+        validation_loader,
+        val_seg_gt,
+        variant["inference_kwargs"]["window_size"],
+        variant["inference_kwargs"]["window_stride"],
+        amp_autocast,
+    )
 
     print("Metrics:", eval_logger, flush=True)
     print(str(eval_logger.mean_iou).split(" ", maxsplit=1)[0])
@@ -87,4 +101,4 @@ def main(model_path: str, patch_type: str, selected_layer: int,
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

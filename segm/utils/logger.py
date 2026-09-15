@@ -20,9 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""Logging utility functions.
 
-
-"""
 https://github.com/facebookresearch/deit/blob/main/utils.py
 """
 
@@ -36,7 +35,7 @@ import torch.distributed as dist
 import segm.utils.torch as ptu
 
 
-class SmoothedValue():
+class SmoothedValue:
     """Track a series of values and provide access to smoothed values over a
     window or the global series average.
     """
@@ -50,15 +49,13 @@ class SmoothedValue():
         self.fmt = fmt
 
     def update(self, value, n=1):
-        """ Update deque, count and total variables.
-        """
+        """Update deque, count and total variables."""
         self.deque.append(value)
         self.count += n
         self.total += value * n
 
     def synchronize_between_processes(self):
-        """ Warning: does not synchronize the deque!
-        """
+        """Warning: does not synchronize the deque!"""
         if not is_dist_avail_and_initialized():
             return
         t = torch.tensor(  # pylint: disable=E1101
@@ -72,34 +69,29 @@ class SmoothedValue():
 
     @property
     def median(self):
-        """ Compute median.
-        """
+        """Compute median."""
         d = torch.tensor(list(self.deque))  # pylint: disable=E1101
         return d.median().item()
 
     @property
     def avg(self):
-        """ Compute average.
-        """
+        """Compute average."""
         d = torch.tensor(list(self.deque), dtype=torch.float32)  # pylint: disable=E1101
         return d.mean().item()
 
     @property
     def global_avg(self):
-        """ Compute global average.
-        """
+        """Compute global average."""
         return self.total / self.count
 
     @property
     def max(self):
-        """ Get max.
-        """
+        """Get max."""
         return max(self.deque)
 
     @property
     def value(self):
-        """ Get last value.
-        """
+        """Get last value."""
         return self.deque[-1]
 
     def __str__(self):
@@ -112,16 +104,15 @@ class SmoothedValue():
         )
 
 
-class MetricLogger():
-    """Metric logger.
-    """
+class MetricLogger:
+    """Metric logger."""
+
     def __init__(self, delimiter="\t"):
         self.meters = defaultdict(SmoothedValue)
         self.delimiter = delimiter
 
     def update(self, n=1, **kwargs):
-        """ Update metric values.
-        """
+        """Update metric values."""
         for k, v in kwargs.items():
             if isinstance(v, torch.Tensor):
                 v = v.item()
@@ -144,19 +135,16 @@ class MetricLogger():
         return self.delimiter.join(loss_str)
 
     def synchronize_between_processes(self):
-        """ Synchronize metric values between processes.
-        """
+        """Synchronize metric values between processes."""
         for meter in self.meters.values():
             meter.synchronize_between_processes()
 
     def add_meter(self, name, meter):
-        """Add metric.
-        """
+        """Add metric."""
         self.meters[name] = meter
 
     def log_every(self, iterable, print_freq, header=None):
-        """ Log values.
-        """
+        """Log values."""
         i = 0
         if not header:
             header = ""
@@ -219,8 +207,7 @@ class MetricLogger():
 
 
 def is_dist_avail_and_initialized():
-    """ Check availability.
-    """
+    """Check availability."""
     if not dist.is_available():
         return False
     if not dist.is_initialized():

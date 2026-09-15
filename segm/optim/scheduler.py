@@ -36,14 +36,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Scheduler class."""
 
 from torch.optim.lr_scheduler import _LRScheduler
 
 
 class PolynomialLR(_LRScheduler):
-    """ Polynomial learning rate scheduler.
-    """
+    """Polynomial learning rate scheduler."""
+
     def __init__(
         self,
         optimizer,
@@ -53,7 +53,7 @@ class PolynomialLR(_LRScheduler):
         min_lr=1e-5,
         last_epoch=-1,
         warmup_epochs=0,
-        start_factor=1.,
+        start_factor=1.0,
     ):
         self.step_size = step_size
         self.warmup_epochs = int(warmup_epochs)
@@ -66,20 +66,20 @@ class PolynomialLR(_LRScheduler):
         if self.warmup_epochs > 0:
             print(self.start_factor)
             for group in self.optimizer.param_groups:
-                group['lr'] = group['lr'] * self.start_factor
+                group["lr"] = group["lr"] * self.start_factor
 
     def linear_warmup(self, lr, initial_lr):
-        """NOTE: initial_lr = learning rate wanted at the end of the warmup
-        """
-        coef = (1. - self.start_factor) / self.warmup_epochs
+        """NOTE: initial_lr = learning rate wanted at the end of the warmup"""
+        coef = (1.0 - self.start_factor) / self.warmup_epochs
         return lr + coef * initial_lr
 
     def polynomial_decay(self, initial_lr):
-        """ Learning rate polynomial decay.
-        """
+        """Learning rate polynomial decay."""
         epoch_cur = int(self.last_epoch)
-        coef = (1. - (epoch_cur - self.warmup_epochs) /
-                (self.max_epoch - self.warmup_epochs)) ** self.power
+        coef = (
+            1.0
+            - (epoch_cur - self.warmup_epochs) / (self.max_epoch - self.warmup_epochs)
+        ) ** self.power
         return (initial_lr - self.min_lr) * coef + self.min_lr
 
     def get_lr(self):
@@ -90,11 +90,12 @@ class PolynomialLR(_LRScheduler):
         ):
             return [group["lr"] for group in self.optimizer.param_groups]
         if self.last_epoch < self.warmup_epochs:
-            return [self.linear_warmup(group['lr'], group['initial_lr'])
-                    for group in self.optimizer.param_groups]
+            return [
+                self.linear_warmup(group["lr"], group["initial_lr"])
+                for group in self.optimizer.param_groups
+            ]
         return [self.polynomial_decay(lr) for lr in self.base_lrs]
 
     def step_update(self, last_epoch):
-        """ Update step.
-        """
+        """Update step."""
         self.step(last_epoch)

@@ -24,15 +24,6 @@ jobs:
         pip install --no-build-isolation mmcv==1.7.2
         if [ -f setup.py ]; then pip install -e .; fi
         if [ -d g2tm ]; then if [ -f g2tm/setup.py ]; then cd g2tm/ && pip install -e . && cd ../; fi; fi
-    - name: Install flake8
-      shell: bash -l {0}
-      run: |
-        conda install flake8
-    - name: Lint with flake8
-      shell: bash -l {0}
-      run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test  installation
       run: |
         python -c 'import segm'

@@ -20,11 +20,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""
+Cityscapes dataset preparation script.
 
+Example:
+    $ python prepare_cityscapes.py /path/to/download/dir --username <username>
+      --password <password>
+"""
 
-import os
 import zipfile
 from pathlib import Path
+from subprocess import run
 
 import click
 import mmcv
@@ -35,35 +41,52 @@ PASSWORD = None
 
 
 def download_cityscapes(path, username, password):
-    """ Download Cityscapes dataset.
-    """
+    """Download Cityscapes dataset."""
     _city_download_urls = [
-        ("gtFine_trainvaltest.zip",
-            "99f532cb1af174f5fcc4c5bc8feea8c66246ddbc"),
-        ("leftImg8bit_trainvaltest.zip",
-            "2c0b77ce9933cc635adda307fbba5566f5d9d404"),
+        ("gtFine_trainvaltest.zip", "99f532cb1af174f5fcc4c5bc8feea8c66246ddbc"),
+        ("leftImg8bit_trainvaltest.zip", "2c0b77ce9933cc635adda307fbba5566f5d9d404"),
     ]
     download_dir = path / "downloads"
     download_dir.mkdir(parents=True, exist_ok=True)
 
-    os.system(
-        "wget --keep-session-cookies --save-cookies=cookies.txt --post-data"
-        f" 'username={username}&password={password}&submit=Login'"
-        f" https://www.cityscapes-dataset.com/login/ -P {download_dir}"
+    run(
+        [
+            "wget",
+            "--keep-session-cookies",
+            "--save-cookies=cookies.txt",
+            "--post-data",
+            f"username={username}&password={password}&submit=Login",
+            "https://www.cityscapes-dataset.com/login/",
+            "-P",
+            str(download_dir),
+        ],
+        check=True,
     )
 
     if not (download_dir / "gtFine_trainvaltest.zip").is_file():
-        os.system(
-            "wget --load-cookies cookies.txt --content-disposition"
-            " https://www.cityscapes-dataset.com/file-handling/?packageID=1"
-            f" -P {download_dir}"
+        run(
+            [
+                "wget",
+                "--load-cookies",
+                "cookies.txt",
+                "--content-disposition",
+                "https://www.cityscapes-dataset.com/file-handling/?packageID=1",
+                f"-P {download_dir}",
+            ],
+            check=True,
         )
 
     if not (download_dir / "leftImg8bit_trainvaltest.zip").is_file():
-        os.system(
-            "wget --load-cookies cookies.txt --content-disposition"
-            " https://www.cityscapes-dataset.com/file-handling/?packageID=3"
-            f" -P {download_dir}"
+        run(
+            [
+                "wget",
+                "--load-cookies",
+                "cookies.txt",
+                "--content-disposition",
+                "https://www.cityscapes-dataset.com/file-handling/?packageID=3",
+                f"-P {download_dir}",
+            ],
+            check=True,
         )
 
     for filename, _ in _city_download_urls:
@@ -74,20 +97,16 @@ def download_cityscapes(path, username, password):
 
 
 def install_cityscapes_api():
-    """ Installing cityscapesscripts librairy.
-    """
-    os.system("pip install cityscapesscripts")
+    """Installing cityscapesscripts librairy."""
+    run(["pip", "install", "cityscapesscripts"], check=True)
     try:
-        import cityscapesscripts  # noqa: F401
+        import cityscapesscripts  # pylint: disable=C0415,W0611
     except ImportError:
-        print(
-            "Installing Cityscapes API failed, please install it manually."
-        )
+        print("Installing Cityscapes API failed, please install it manually.")
 
 
 def convert_json_to_label(json_file):
-    """ Convert json file to Cityscapes label.
-    """
+    """Convert json file to Cityscapes label."""
     label_file = json_file.replace("_polygons.json", "_labelTrainIds.png")
     json2labelImg(json_file, label_file, "trainIds")
 
@@ -103,8 +122,7 @@ def main(
     password,
     nproc,
 ):
-    """ Prepare Cityscapes dataset.
-    """
+    """Prepare Cityscapes dataset."""
 
     dataset_dir = Path(download_dir) / "cityscapes"
 
@@ -130,13 +148,12 @@ def main(
 
     for split in split_names:
         filenames = []
-        for poly in mmcv.scandir(str(gt_dir / split), "_polygons.json",
-                                 recursive=True):
+        for poly in mmcv.scandir(str(gt_dir / split), "_polygons.json", recursive=True):
             filenames.append(poly.replace("_gtFine_polygons.json", ""))
         name = f"{split}.txt"
-        with open(str(dataset_dir / name), "w", encoding='utf-8') as f:
+        with open(str(dataset_dir / name), "w", encoding="utf-8") as f:
             f.writelines(f + "\n" for f in filenames)
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

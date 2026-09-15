@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Pascal Context dataset wrapper class."""
 
 from pathlib import Path
 
@@ -28,15 +28,13 @@ from segm.data.base import BaseMMSeg
 from segm.data import utils
 from segm.config import dataset_dir
 
-PASCAL_CONTEXT_CONFIG_PATH = (Path(__file__).parent / "config" /
-                              "pascal_context.py")
-PASCAL_CONTEXT_CATS_PATH = (Path(__file__).parent / "config" /
-                            "pascal_context.yml")
+PASCAL_CONTEXT_CONFIG_PATH = Path(__file__).parent / "config" / "pascal_context.py"
+PASCAL_CONTEXT_CATS_PATH = Path(__file__).parent / "config" / "pascal_context.yml"
 
 
 class PascalContextDataset(BaseMMSeg):
-    """ PascalContext dataset class.
-    """
+    """PascalContext dataset class."""
+
     def __init__(self, image_size, crop_size, split, **kwargs):
         super().__init__(
             image_size, crop_size, split, PASCAL_CONTEXT_CONFIG_PATH, **kwargs
@@ -57,12 +55,10 @@ class PascalContextDataset(BaseMMSeg):
         elif self.split == "val":
             config.data.val.data_root = path / "VOCdevkit/VOC2012/"
         elif self.split == "test":
-            raise ValueError("Test split is not valid for Pascal Context"
-                             " dataset.")
+            raise ValueError("Test split is not valid for Pascal Context dataset.")
         config = super().update_default_config(config)
         return config
 
     def test_post_process(self, labels):
-        """ Test post-processing.
-        """
+        """Test post-processing."""
         return labels

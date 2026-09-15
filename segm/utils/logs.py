@@ -20,7 +20,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""Plot logs script.
 
+Example:
+    $ python -m segm.utils.logs logs/config.yaml --x-key epoch --y-key val_mean_iou
+"""
 
 from collections import OrderedDict
 
@@ -35,8 +39,7 @@ from segm.utils.lines import Lines
 
 
 def plot_logs(logs, x_key, y_key, size, vmin, vmax, epochs):
-    """ Plot logs.
-    """
+    """Plot logs."""
     pinf = np.inf
     minf = -np.inf
     domains = []
@@ -81,15 +84,13 @@ def plot_logs(logs, x_key, y_key, size, vmin, vmax, epochs):
 
     plt.show()
     fig.savefig(
-        "plot.png", bbox_inches="tight", pad_inches=0.1,
-        transparent=False, dpi=300
+        "plot.png", bbox_inches="tight", pad_inches=0.1, transparent=False, dpi=300
     )
     plt.close(fig)
 
 
 def print_logs(logs, x_key, y_key, last_log_idx=None):
-    """ Print logs.
-    """
+    """Print logs."""
     delim = "   "
     s = ""
     keys = []
@@ -101,12 +102,12 @@ def print_logs(logs, x_key, y_key, last_log_idx=None):
         while y_keys[0] not in log[log_idx]:
             log_idx -= 1
         last_log = log[log_idx]
-        # log_x = last_log[x_key]
+        log_x = last_log[x_key]
         log_y = last_log[y_keys[0]]
         for y in y_keys[1:]:
             log_y = log_y[y]
         s += f"{name}:\n"
-        # s += f"{delim}{x_key}: {log_x}\n"
+        s += f"{delim}{x_key}: {log_x}\n"
         s += f"{delim}{y_key}: {log_y:.4f}\n"
         keys += list(last_log.keys())
     keys = list(set(keys))
@@ -116,8 +117,7 @@ def print_logs(logs, x_key, y_key, last_log_idx=None):
 
 
 def read_logs(root, logs_path):
-    """ Read logs.
-    """
+    """Read logs."""
     logs = {}
     for name, path in logs_path.items():
         path = root / path
@@ -125,7 +125,7 @@ def read_logs(root, logs_path):
             print(f"Skipping {name} that has no log file")
             continue
         logs[name] = []
-        with open(path, "r", encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             for line in f.readlines():
                 d = json.loads(line)
                 logs[name].append(d)
@@ -140,12 +140,11 @@ def read_logs(root, logs_path):
 @click.option("-ep", "--epoch", default=-1, type=int)
 @click.option("-plot", "--plot/--no-plot", default=True, is_flag=True)
 def main(log_path, x_key, y_key, size, epoch, plot):
-    """ Pretty print logs for log file.
-    """
+    """Pretty print logs for log file."""
     abs_path = Path(__file__).parent / log_path
     if abs_path.exists():
         log_path = abs_path
-    with open(log_path, "r", encoding='utf-8') as f:
+    with open(log_path, "r", encoding="utf-8") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     root = Path(config["root"])
     logs_path = OrderedDict(config["logs"])
@@ -162,4 +161,4 @@ def main(log_path, x_key, y_key, size, epoch, plot):
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

@@ -11,7 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Script to compute the token statistics of a model.
 
+Example: see README.md
+"""
 
 import os
 import click
@@ -39,12 +43,20 @@ def fill_stats(li: list, q: float = 0.9) -> dict:
     Returns:
         dict: Dictionnary containing the statistics.
     """
-    return {
-            "mean": np.mean(li),
-            "median": np.median(li),
-            f"q{int(100-q*100)}": np.quantile(li, 1-q),
-            f"q{int(q*100)}": np.quantile(li, q)
+    if li is None:
+        return {
+            "mean": np.nan,
+            "median": np.nan,
+            f"q{int(100-q*100)}": np.nan,
+            f"q{int(q*100)}": np.nan,
         }
+
+    return {
+        "mean": np.mean(li),
+        "median": np.median(li),
+        f"q{int(100-q*100)}": np.quantile(li, 1 - q),
+        f"q{int(q*100)}": np.quantile(li, q),
+    }
 
 
 def pretty_print_dict(d: dict, unit: str = "", indent: int = 0):
@@ -57,15 +69,16 @@ def pretty_print_dict(d: dict, unit: str = "", indent: int = 0):
     """
     for key, value in d.items():
         if isinstance(value, dict):
-            print('\t' * indent + str(key))
+            print("\t" * indent + str(key))
             pretty_print_dict(value, unit, indent + 1)
         else:
-            print('\t' * indent + f"{key}: {value:.3f} {unit}")
+            print("\t" * indent + f"{key}: {value:.3f} {unit}")
 
 
 @torch.no_grad()
-def print_fusion_stats(model: nn.Module, validation_loader: DataLoader,
-                       layer_id: int, patch_type: str):
+def print_fusion_stats(
+    model: nn.Module, validation_loader: DataLoader, layer_id: int, patch_type: str
+):
     """Getting fusion statistics for a certain encoder layer ID.
 
     This function computes statistics on the token sequence (mean, median
@@ -81,8 +94,8 @@ def print_fusion_stats(model: nn.Module, validation_loader: DataLoader,
         patch_type (str): Token reduction method (pure => no reduction).
     """
     print(f"Getting token fusion stats from encoder layer ID {layer_id}.")
-    token_number = []
-    token_size = []
+    token_counts = []
+    token_sizes = []
     print_warning = False
 
     for image in tqdm(validation_loader, position=0, leave=False):
@@ -90,24 +103,26 @@ def print_fusion_stats(model: nn.Module, validation_loader: DataLoader,
         image = image.to(ptu.device)
         attn_map = model.get_attention_map_enc(image.to(ptu.device), layer_id)
         s = model.encoder.info["size"]
+        num_extra_tokens = 1 + model.encoder.distilled
 
         if s is None:
             print_warning = True
-            n = attn_map.size(2) - 1
-            s = np.ones((1, n), dtype=float)
-
-        if patch_type == "graph":
-            token_number.append(s.shape[1])
-            token_size += list(filter((1).__ne__, s[0].tolist()))
+            token_counts.append(attn_map.size(2) - num_extra_tokens)
+        else:
+            s = s[:, num_extra_tokens:]
+            token_counts.append(s.size(1))
+            token_sizes += list(filter((1).__ne__, s[0].tolist()))
 
     if print_warning:
-        print("WARNING: token size tensor is None, either the module has not"
-              " find any fusion in this image, or no fusion module has been"
-              " trigered. In this case, consider increasing the layer ID.")
+        print(
+            "WARNING: token size tensor is None, either the module has not"
+            " find any fusion in this image, or no fusion module has been"
+            " trigered. In this case, consider increasing the layer ID."
+        )
 
     out = {"Number of tokens": {}, "Size of tokens (!=1)": {}}
-    out["Number of tokens"] = fill_stats(token_number, 0.95)
-    out["Size of tokens (!=1)"] = fill_stats(token_size)
+    out["Number of tokens"] = fill_stats(token_counts, 0.95)
+    out["Size of tokens (!=1)"] = fill_stats(token_sizes)
     pretty_print_dict(out)
 
 
@@ -120,8 +135,16 @@ def print_fusion_stats(model: nn.Module, validation_loader: DataLoader,
 @click.option("--threshold", default=0.88, type=float)
 @click.option("--prop-attn/--no-prop-attn", default=False, is_flag=True)
 @click.option("--iprop-attn/--no-iprop-attn", default=False, is_flag=True)
-def main(model_path, dataset_name, layer_id, patch_type,
-         selected_layer, threshold, prop_attn, iprop_attn):
+def main(
+    model_path,
+    dataset_name,
+    layer_id,
+    patch_type,
+    selected_layer,
+    threshold,
+    prop_attn,
+    iprop_attn,
+):
     """Compute the token statistics of the model.
 
     Args:
@@ -137,32 +160,38 @@ def main(model_path, dataset_name, layer_id, patch_type,
     ptu.set_gpu_mode(True)
 
     batch_size = 1
-    root_dir = os.getenv('DATASET')
+    root_dir = os.getenv("DATASET")
 
-    dataset_path, dataset_txt_path = get_dataset_inference_path(dataset_name,
-                                                                root_dir)
+    dataset_path, dataset_txt_path = get_dataset_inference_path(dataset_name, root_dir)
 
     model, variant = load_model(model_path)
-    input_size = variant['dataset_kwargs']['crop_size']
+    input_size = variant["dataset_kwargs"]["crop_size"]
     normalization = variant["dataset_kwargs"]["normalization"]
     stats = STATS[normalization]
 
     if patch_type == "graph":
-        g2tm.graph_segmenter_patch(model, selected_layer, threshold,
-                                   prop_attn, iprop_attn)
+        g2tm.graph_segmenter_patch(
+            model, selected_layer, threshold, prop_attn, iprop_attn
+        )
     else:
-        raise ValueError("No token reduction applied. This script has no"
-                         "interest for vanilla models.")
+        patch_size = variant["net_kwargs"]["patch_size"]
+        vanilla_tokens = (input_size / patch_size) ** 2
+        raise ValueError(
+            "No token reduction applied. This script has no "
+            "interest for vanilla models, with constant token "
+            f"sequence length of {vanilla_tokens}."
+        )
 
     model.eval()
     for p in model.parameters():
         p.requires_grad = False
     model.to(ptu.device)
 
-    validation_loader = dataset_prepare(dataset_path, dataset_txt_path, stats,
-                                        batch_size, input_size)
+    validation_loader = dataset_prepare(
+        dataset_path, dataset_txt_path, stats, batch_size, input_size
+    )
     print_fusion_stats(model, validation_loader, layer_id, patch_type)
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

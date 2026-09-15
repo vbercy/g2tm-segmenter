@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Version information for the segm package."""
 
 __version__ = "0.0.1b"
 
@@ -38,8 +38,8 @@ def parse_version_info(version_str):
     for x in version_str.split("."):
         if x.isdigit():
             version_infos.append(int(x))
-        elif x.find('rc') != -1:
-            patch_version = x.split('rc')
+        elif x.find("rc") != -1:
+            patch_version = x.split("rc")
             version_infos.append(int(patch_version[0]))
             version_infos.append(f"rc{patch_version[1]}")
     return tuple(version_infos)

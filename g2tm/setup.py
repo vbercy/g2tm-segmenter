@@ -13,24 +13,23 @@
 # limitations under the License.
 
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def get_version():
-    """ Returns the segm package version.
-    """
+    """Returns the segm package version."""
     version = None
-    with open('./g2tm/version.py', encoding='utf-8') as f:
+    with open("./g2tm/version.py", encoding="utf-8") as f:
         for line in f:
             if line.startswith("__version__"):
                 version = line.split("=")[1].strip().strip('"').strip("'")
                 break
     return version
 
+
 def readme():
-    """ Returns README file as string.
-    """
-    with open('../README.md', encoding='utf-8') as f:
+    """Returns README file as string."""
+    with open("../README.md", encoding="utf-8") as f:
         content = f.read()
     return content
 
@@ -40,7 +39,7 @@ setup(
     version=get_version(),
     author="Victor BERCY",
     description="G2TM: Single Module Graph-Guided Token Merging for Efficient"
-                "for Semantic Segmentation",
+    "for Semantic Segmentation",
     install_requires=[
         "numpy<2",
         "torch<2",
@@ -53,5 +52,5 @@ setup(
     ],
     long_description=readme(),
     long_description_content_type="text/markdown",
-    packages=["g2tm"],
+    packages=find_packages(),
 )

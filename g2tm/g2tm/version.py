@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+"""Version information for the g2tm package."""
 
 __version__ = "0.1"
 
@@ -29,8 +29,8 @@ def parse_version_info(version_str):
     for x in version_str.split("."):
         if x.isdigit():
             version_infos.append(int(x))
-        elif x.find('rc') != -1:
-            patch_version = x.split('rc')
+        elif x.find("rc") != -1:
+            patch_version = x.split("rc")
             version_infos.append(int(patch_version[0]))
             version_infos.append(f"rc{patch_version[1]}")
     return tuple(version_infos)

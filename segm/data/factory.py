@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+"""Tool functions for dataset wrapper classes."""
 
 import segm.utils.torch as ptu
 from segm.data import ImagenetDataset
@@ -31,8 +31,7 @@ from segm.data import Loader
 
 
 def create_dataset(dataset_kwargs):
-    """ Create a dataset from configuration dictionary.
-    """
+    """Create a dataset from configuration dictionary."""
     dataset_kwargs = dataset_kwargs.copy()
     dataset_name = dataset_kwargs.pop("dataset")
     batch_size = dataset_kwargs.pop("batch_size")

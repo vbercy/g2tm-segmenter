@@ -36,7 +36,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""
+Training script for semantic segmentation task with or without token reduction.
 
+Examples: see README.md
+"""
 
 import json
 import argparse
@@ -74,7 +78,6 @@ import g2tm
 @click.option("--optimizer", default="sgd", type=str)
 @click.option("--scheduler", default="polynomial", type=str)
 @click.option("--weight-decay", default=0.0, type=float)
-@click.option("--momentum", default=0.9, type=float)
 @click.option("--dropout", default=0.0, type=float)
 @click.option("--drop-path", default=0.1, type=float)
 @click.option("--batch-size", default=None, type=int)
@@ -82,7 +85,7 @@ import g2tm
 @click.option("-lr", "--learning-rate", default=None, type=float)
 @click.option("-min-lr", "--minlearning-rate", default=1e-5, type=float)
 @click.option("--warmup-epochs", default=0, type=int)
-@click.option("--start-factor", default=1., type=float)
+@click.option("--start-factor", default=1.0, type=float)
 @click.option("--normalization", default=None, type=str)
 @click.option("--eval-freq", default=None, type=int)
 @click.option("--amp/--no-amp", default=False, is_flag=True)
@@ -93,18 +96,45 @@ import g2tm
 @click.option("--start-thresh", default=0.95, type=float)
 @click.option("--curric-warmup", default=64, type=int)
 @click.option("--curric-period", default=10, type=int)
-@click.option("--curric-thresh/--no-curric-thresh",
-              default=False, is_flag=True)
+@click.option("--curric-thresh/--no-curric-thresh", default=False, is_flag=True)
 @click.option("--prop-attn/--no-prop-attn", default=False, is_flag=True)
 @click.option("--iprop-attn/--no-iprop-attn", default=False, is_flag=True)
 @click.option("--n-cycles", default=None, type=int)
-def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
-         backbone, decoder, optimizer, scheduler, weight_decay, momentum,
-         dropout, drop_path, batch_size, epochs, learning_rate,
-         minlearning_rate, warmup_epochs, start_factor, normalization,
-         eval_freq, amp, resume, patch_type, selected_layer, threshold,
-         start_thresh, curric_warmup, curric_period, curric_thresh, prop_attn,
-         iprop_attn, n_cycles):
+def main(
+    log_dir,
+    dataset,
+    im_size,
+    crop_size,
+    window_size,
+    window_stride,
+    backbone,
+    decoder,
+    optimizer,
+    scheduler,
+    weight_decay,
+    dropout,
+    drop_path,
+    batch_size,
+    epochs,
+    learning_rate,
+    minlearning_rate,
+    warmup_epochs,
+    start_factor,
+    normalization,
+    eval_freq,
+    amp,
+    resume,
+    patch_type,
+    selected_layer,
+    threshold,
+    start_thresh,
+    curric_warmup,
+    curric_period,
+    curric_thresh,
+    prop_attn,
+    iprop_attn,
+    n_cycles,
+):
     """Model training with or without token reduction.
 
     Args:
@@ -118,8 +148,7 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
         decoder (str): Architecture of the decoder.
         optimizer (str): Optimizer to use.
         scheduler (str): Learning rate scheduler to use.
-        weight_decay (float): Weight decay value.
-        momentum (float): Momentum value
+        weight_decay (float): Weigth decay value.
         dropout (float): dropout probability applied to attention weights.
         drop_path (float): Probability of dropping the residual path.
         batch_size (int): Number of images per batch.
@@ -239,7 +268,7 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
             opt=optimizer,
             lr=lr,
             weight_decay=weight_decay,
-            momentum=momentum,
+            momentum=0.9,
             clip_grad=None,
             sched=scheduler,
             epochs=epochs,
@@ -272,10 +301,10 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
 
     dataset_kwargs = variant["dataset_kwargs"]
 
-    if dataset_kwargs["dataset"] == 'ade20k_large':
-        dataset_kwargs["dataset"] = 'ade20k'
-    elif dataset_kwargs["dataset"] == 'cityscapes_large':
-        dataset_kwargs["dataset"] = 'cityscapes'
+    if dataset_kwargs["dataset"] == "ade20k_large":
+        dataset_kwargs["dataset"] = "ade20k"
+    elif dataset_kwargs["dataset"] == "cityscapes_large":
+        dataset_kwargs["dataset"] = "cityscapes"
 
     train_loader = create_dataset(dataset_kwargs)
     val_kwargs = dataset_kwargs.copy()
@@ -291,8 +320,9 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
     model = create_segmenter(net_kwargs)
 
     if patch_type == "graph":
-        g2tm.graph_segmenter_patch(model, selected_layer, start_thresh,
-                                   prop_attn, iprop_attn)
+        g2tm.graph_segmenter_patch(
+            model, selected_layer, start_thresh, prop_attn, iprop_attn
+        )
 
     model.to(ptu.device)
     optimizer_kwargs = variant["optimizer_kwargs"]
@@ -317,7 +347,7 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
 
         if optimizer and "optimizer" in checkpoint:
             optimizer.load_state_dict(checkpoint["optimizer"])
-            variant["algorithm_kwargs"]["start_epoch"] = checkpoint["epoch"]+1
+            variant["algorithm_kwargs"]["start_epoch"] = checkpoint["epoch"] + 1
 
         if loss_scaler and "loss_scaler" in checkpoint:
             loss_scaler.load_state_dict(checkpoint["loss_scaler"])
@@ -333,8 +363,7 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
         sync_model(log_dir, model)
 
     if ptu.distributed:
-        model = DDP(model, device_ids=[ptu.device],
-                    find_unused_parameters=True)
+        model = DDP(model, device_ids=[ptu.device], find_unused_parameters=True)
 
     # save config
     variant_str = yaml.dump(variant)
@@ -342,7 +371,7 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
     variant["net_kwargs"] = net_kwargs
     variant["dataset_kwargs"] = dataset_kwargs
     log_dir.mkdir(parents=True, exist_ok=True)
-    with open(log_dir / "variant.yml", "w", encoding='utf-8') as f:
+    with open(log_dir / "variant.yml", "w", encoding="utf-8") as f:
         f.write(variant_str)
 
     # train
@@ -368,19 +397,24 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
         writer.add_scalar("epoch", epoch, epoch, new_style=True)
 
         if curric_thresh:
-            if (epoch > curric_warmup - 1 and
-                    (epoch - curric_warmup) % curric_period == 0 and
-                    model_without_ddp.encoder.threshold > threshold):
-                model_without_ddp.encoder.threshold = (
-                    round(model_without_ddp.encoder.threshold-0.01, 2)
+            if (
+                epoch > curric_warmup - 1
+                and (epoch - curric_warmup) % curric_period == 0
+                and model_without_ddp.encoder.threshold > threshold
+            ):
+                model_without_ddp.encoder.threshold = round(
+                    model_without_ddp.encoder.threshold - 0.01, 2
                 )
-                model_without_ddp.encoder.info["threshold"] = (
-                    round(model_without_ddp.encoder.info["threshold"]-0.01, 2)
+                model_without_ddp.encoder.info["threshold"] = round(
+                    model_without_ddp.encoder.info["threshold"] - 0.01, 2
                 )
                 best_checkpoint = 0.0
-            writer.add_scalar("threshold",
-                              model_without_ddp.encoder.info["threshold"],
-                              epoch, new_style=True)
+            writer.add_scalar(
+                "threshold",
+                model_without_ddp.encoder.info["threshold"],
+                epoch,
+                new_style=True,
+            )
 
         # train for one epoch
         train_logger = train_one_epoch(
@@ -391,7 +425,7 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
             epoch,
             amp_autocast,
             loss_scaler,
-            writer
+            writer,
         )
 
         # save checkpoint
@@ -421,22 +455,25 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
                 amp_autocast,
             )
 
-            writer.add_scalar("val_pixel_acc",
-                              eval_logger.pixel_accuracy.global_avg,
-                              epoch, new_style=True)
-            writer.add_scalar("val_mean_acc",
-                              eval_logger.mean_accuracy.global_avg,
-                              epoch, new_style=True)
-            writer.add_scalar("val_mean_iou",
-                              eval_logger.mean_iou.global_avg,
-                              epoch, new_style=True)
+            writer.add_scalar(
+                "val_pixel_acc",
+                eval_logger.pixel_accuracy.median,
+                epoch,
+                new_style=True,
+            )
+            writer.add_scalar(
+                "val_mean_acc", eval_logger.mean_accuracy.median, epoch, new_style=True
+            )
+            writer.add_scalar(
+                "val_mean_iou", eval_logger.mean_iou.median, epoch, new_style=True
+            )
 
             print(f"Stats [{epoch}]:", eval_logger, flush=True)
             print(str(eval_logger.mean_iou).split(" ", maxsplit=1)[0])
             print("")
 
-            curr_checkpoint = eval_logger.mean_iou.global_avg
-            if curr_checkpoint > best_checkpoint and ptu.dist_rank == 0:
+            curr_checkpoint = str(eval_logger.mean_iou).split(" ", maxsplit=1)[0]
+            if float(curr_checkpoint) > best_checkpoint:
                 print("saving the best checkpoint ...")
                 best_checkpoint = float(curr_checkpoint)
                 best_checkpoint_name = (
@@ -448,14 +485,12 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
         # log stats
         if ptu.dist_rank == 0:
             train_stats = {
-                k: meter.global_avg for k,
-                meter in train_logger.meters.items()
+                k: meter.global_avg for k, meter in train_logger.meters.items()
             }
             val_stats = {}
             if eval_epoch:
                 val_stats = {
-                    k: meter.global_avg for k,
-                    meter in eval_logger.meters.items()
+                    k: meter.global_avg for k, meter in eval_logger.meters.items()
                 }
 
             log_stats = {
@@ -463,11 +498,14 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
                 **{f"val_{k}": v for k, v in val_stats.items()},
                 "epoch": epoch,
                 "num_updates": (epoch + 1) * len(train_loader),
-                "threshold": (model_without_ddp.encoder.threshold
-                              if (patch_type != "pure") else None),
+                "threshold": (
+                    model_without_ddp.encoder.threshold
+                    if (patch_type != "pure")
+                    else None
+                ),
             }
 
-            with open(log_dir / "log.txt", "a", encoding='utf-8') as f:
+            with open(log_dir / "log.txt", "a", encoding="utf-8") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
     distributed.barrier()
@@ -476,4 +514,4 @@ def main(log_dir, dataset, im_size, crop_size, window_size, window_stride,
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

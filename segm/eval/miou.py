@@ -36,7 +36,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""
+Compute mIoU score for a semantic segmentation model for a given dataset.
+Models whether they use G2TM or not can be evaluated.
 
+Example:
+    $ python ./segm/eval/miou.py $CKPT_PATH $DATASET --patch-type graph
+      --selected-layer 2 -- threshold 0.88
+"""
 
 import sys
 from pathlib import Path
@@ -65,18 +72,15 @@ import g2tm
 
 
 def blend_im(im, seg, alpha=0.5):
-    """ Blends image.
-    """
+    """Blends image."""
     pil_im = Image.fromarray(im)
     pil_seg = Image.fromarray(seg)
     im_blend = Image.blend(pil_im, pil_seg, alpha).convert("RGB")
     return np.asarray(im_blend)
 
 
-def save_im(save_dir, save_name, im, seg_pred, seg_gt, colors, blend,
-            normalization):
-    """ Saves image.
-    """
+def save_im(save_dir, save_name, im, seg_pred, seg_gt, colors, blend, normalization):
+    """Saves image."""
     seg_rgb = seg_to_rgb(seg_gt[None], colors)
     pred_rgb = seg_to_rgb(seg_pred[None], colors)
     im_unnorm = rgb_denormalize(im, normalization)
@@ -94,7 +98,8 @@ def save_im(save_dir, save_name, im, seg_pred, seg_gt, colors, blend,
         else:
             ims = (im_uint[i], seg_pred_uint[i], seg_rgb_uint[i])
         for img, im_dir in zip(
-            ims, (save_dir / "input", save_dir / "pred", save_dir / "gt"),
+            ims,
+            (save_dir / "input", save_dir / "pred", save_dir / "gt"),
         ):
             pil_out = Image.fromarray(img)
             im_dir.mkdir(exist_ok=True)
@@ -102,10 +107,13 @@ def save_im(save_dir, save_name, im, seg_pred, seg_gt, colors, blend,
 
 
 def process_batch(
-    model, batch, window_size, window_stride, window_batch_size,
+    model,
+    batch,
+    window_size,
+    window_stride,
+    window_batch_size,
 ):
-    """ Runs batch inference.
-    """
+    """Runs batch inference."""
     ims = batch["im"]
     ims_metas = batch["im_metas"]
     ori_shape = ims_metas[0]["ori_shape"]
@@ -142,8 +150,7 @@ def eval_dataset(
     frac_dataset,
     dataset_kwargs,
 ):
-    """ Evaluate the model on semantic segmentation accuracy metrics.
-    """
+    """Evaluate the model on semantic segmentation accuracy metrics."""
     db = create_dataset(dataset_kwargs)
     normalization = db.dataset.normalization
     dataset_name = dataset_kwargs["dataset"]
@@ -163,7 +170,11 @@ def eval_dataset(
     for batch in logger.log_every(db, print_freq, header):
         colors = batch["colors"]
         filename, im, seg_pred = process_batch(
-            model, batch, window_size, window_stride, window_batch_size,
+            model,
+            batch,
+            window_size,
+            window_stride,
+            window_batch_size,
         )
         ims[filename] = im
         seg_pred_maps[filename] = seg_pred
@@ -221,8 +232,7 @@ def eval_dataset(
     )
 
     if ptu.dist_rank == 0:
-        scores["inference"] = ("single_scale" if not multiscale
-                               else "multi_scale")
+        scores["inference"] = "single_scale" if not multiscale else "multi_scale"
         suffix = "ss" if not multiscale else "ms"
         scores["cat_iou"] = np.round(100 * scores["cat_iou"], 2).tolist()
         for k, v in scores.items():
@@ -231,7 +241,7 @@ def eval_dataset(
                     scores[k] = v.item()
                 print(f"{k}: {scores[k]}")
         scores_str = yaml.dump(scores)
-        with open(model_dir / f"scores_{suffix}.yml", "w", encoding='utf-8') as f:
+        with open(model_dir / f"scores_{suffix}.yml", "w", encoding="utf-8") as f:
             f.write(scores_str)
 
 
@@ -247,16 +257,28 @@ def eval_dataset(
 @click.option("--save-images/--no-save-images", default=False, is_flag=True)
 @click.option("--frac-dataset", default=1.0, type=float)
 @click.option("--patch-type", default="pure", type=str)
-@click.option("--selected-layer", default=1, type=int)
+@click.option("--selected-layer", default=2, type=int)
 @click.option("--threshold", default=0.88, type=float)
 @click.option("--prop-attn/--no-prop-attn", default=False, is_flag=True)
 @click.option("--iprop-attn/--no-iprop-attn", default=False, is_flag=True)
-def main(model_path, dataset_name, im_size, multiscale, blend,
-         window_size, window_stride, window_batch_size, save_images,
-         frac_dataset, patch_type, selected_layer, threshold, prop_attn,
-         iprop_attn):
-    """ Compute semantic segmentation accuracy metrics of the model.
-    """
+def main(
+    model_path,
+    dataset_name,
+    im_size,
+    multiscale,
+    blend,
+    window_size,
+    window_stride,
+    window_batch_size,
+    save_images,
+    frac_dataset,
+    patch_type,
+    selected_layer,
+    threshold,
+    prop_attn,
+    iprop_attn,
+):
+    """Compute semantic segmentation accuracy metrics of the model."""
     model_dir = Path(model_path).parent
 
     # start distributed mode
@@ -266,22 +288,21 @@ def main(model_path, dataset_name, im_size, multiscale, blend,
     model, variant = load_model(model_path)
 
     if patch_type == "graph":
-        g2tm.graph_segmenter_patch(model, selected_layer, threshold,
-                                   prop_attn, iprop_attn)
+        g2tm.graph_segmenter_patch(
+            model, selected_layer, threshold, prop_attn, iprop_attn
+        )
 
     patch_size = model.patch_size
     model.eval()
     model.to(ptu.device)
     if ptu.distributed:
-        model = DDP(model, device_ids=[ptu.device],
-                    find_unused_parameters=True)
+        model = DDP(model, device_ids=[ptu.device], find_unused_parameters=True)
 
     cfg = config.load_config()
     dataset_cfg = cfg["dataset"][dataset_name]
     normalization = variant["dataset_kwargs"]["normalization"]
     if im_size is None:
-        im_size = dataset_cfg.get("im_size",
-                                  variant["dataset_kwargs"]["image_size"])
+        im_size = dataset_cfg.get("im_size", variant["dataset_kwargs"]["image_size"])
     if window_size is None:
         window_size = variant["dataset_kwargs"]["crop_size"]
     if window_stride is None:
@@ -294,7 +315,7 @@ def main(model_path, dataset_name, im_size, multiscale, blend,
         "patch_size": patch_size,
         "batch_size": 1,
         "num_workers": 10,
-        "split": 'val',
+        "split": "val",
         "normalization": normalization,
         "crop": False,
         "rep_aug": False,
@@ -319,4 +340,4 @@ def main(model_path, dataset_name, im_size, multiscale, blend,
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

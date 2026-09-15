@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Modifications based on code from Narges Norouzi et al. (ALGM)
-
+"""Utility functions for inference and validation datasets."""
 
 import os
 import warnings
@@ -22,7 +22,6 @@ from PIL import Image
 
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
-
 
 warnings.filterwarnings("ignore")
 
@@ -39,13 +38,15 @@ def get_dataset_inference_path(dataset_name: str, root_dir: str):
         dataset_path_txt (str): Path to specific text file for Pascal Context.
     """
     dataset_path, dataset_path_txt = None, None
-    if dataset_name == 'ade20k':
-        dataset_path = root_dir + '/images/validation/'
-    elif dataset_name == 'cityscapes':
-        dataset_path = root_dir + '/leftImg8bit/val/'
-    elif dataset_name == 'pascal_context':
-        dataset_path_txt = root_dir + '/VOCdevkit/VOC2012/ImageSets/Segmentation/val.txt'
-        dataset_path = root_dir + '/VOCdevkit/VOC2012/JPEGImages/'
+    if dataset_name == "ade20k":
+        dataset_path = root_dir + "/images/validation/"
+    elif dataset_name == "cityscapes":
+        dataset_path = root_dir + "/leftImg8bit/val/"
+    elif dataset_name == "pascal_context":
+        dataset_path_txt = (
+            root_dir + "/VOCdevkit/VOC2012/ImageSets/Segmentation/val.txt"
+        )
+        dataset_path = root_dir + "/VOCdevkit/VOC2012/JPEGImages/"
 
     return dataset_path, dataset_path_txt
 
@@ -58,16 +59,18 @@ class InferenceDataset(Dataset):
         transform (transforms.Compose): Transformations to apply to the images.
         txt_file (str): Path to optional text file (for Pascal Context only).
     """
-    def __init__(self, root_dir: str, transform: transforms.Compose = None,
-                 txt_file: str = None):
+
+    def __init__(
+        self, root_dir: str, transform: transforms.Compose = None, txt_file: str = None
+    ):
         self.root_dir = root_dir
         self.transform = transform
 
         # If txt_file is provided, read image names from it
         if txt_file:
-            with open(txt_file, 'r', encoding='utf-8') as file:
+            with open(txt_file, "r", encoding="utf-8") as file:
                 self.image_files = [
-                    os.path.join(root_dir, line.strip() + '.jpg')
+                    os.path.join(root_dir, line.strip() + ".jpg")
                     for line in file.readlines()
                 ]
         else:
@@ -79,7 +82,8 @@ class InferenceDataset(Dataset):
         for dirpath, _, filenames in os.walk(root_dir):
             for file in filenames:
                 if file.lower().endswith(
-                        ('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
+                    (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
+                ):
                     image_files.append(os.path.join(dirpath, file))
         return image_files
 
@@ -94,9 +98,14 @@ class InferenceDataset(Dataset):
         return image
 
 
-def dataset_prepare(dataset_path: str, dataset_txt_path: str,
-                    stats: dict, batch_size: int, input_size: int,
-                    shuffle: bool = True) -> Dataset:
+def dataset_prepare(
+    dataset_path: str,
+    dataset_txt_path: str,
+    stats: dict,
+    batch_size: int,
+    input_size: int,
+    shuffle: bool = True,
+) -> Dataset:
     """Inference dataset.
 
     This function creates a dataset for inference from the dataset*
@@ -114,20 +123,26 @@ def dataset_prepare(dataset_path: str, dataset_txt_path: str,
     Returns:
         validation_loader (Dataset): PyTorch dataloader.
     """
-    validation_transforms = transforms.Compose([
-        transforms.Resize((input_size, input_size)),
-        transforms.ToTensor(),
-        transforms.Normalize(stats["mean"], stats["std"])
-    ])
+    validation_transforms = transforms.Compose(
+        [
+            transforms.Resize((input_size, input_size)),
+            transforms.ToTensor(),
+            transforms.Normalize(stats["mean"], stats["std"]),
+        ]
+    )
 
     if dataset_txt_path is None:
-        validation_dataset = InferenceDataset(root_dir=dataset_path,
-                                              transform=validation_transforms)
+        validation_dataset = InferenceDataset(
+            root_dir=dataset_path, transform=validation_transforms
+        )
     else:
-        validation_dataset = InferenceDataset(root_dir=dataset_path,
-                                              transform=validation_transforms,
-                                              txt_file=dataset_txt_path)
+        validation_dataset = InferenceDataset(
+            root_dir=dataset_path,
+            transform=validation_transforms,
+            txt_file=dataset_txt_path,
+        )
 
-    validation_loader = DataLoader(validation_dataset, batch_size=batch_size,
-                                   shuffle=shuffle)
+    validation_loader = DataLoader(
+        validation_dataset, batch_size=batch_size, shuffle=shuffle
+    )
     return validation_loader
